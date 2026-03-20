@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi de Bataille - COFAS</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ===== GOT PALETTE =====
+   Pierre sombre, fer, braise, sang, parchemin brule
+   Fond : anthracite chaud #1C1A17
+   Surfaces : pierre #252118 / ardoise #2C2720
+   Or fer : #B8973A / eclat : #D4AF37
+   Rouge sang : #8B1A1A / braise : #C0392B
+   Bleu acier froid : #2C3E50 (camp A)
+   Grenat profond : #5C1A1A (camp B)
+   Texte clair : #E8DCC8 (parchemin clair)
+   Texte secondaire : #9A8C78
+*/
+:root{
+  --stone:#1C1A17;
+  --stone2:#252118;
+  --stone3:#2C2720;
+  --iron:#3A342B;
+  --parch:#E8DCC8;
+  --parch2:#D4C5A0;
+  --parch3:#B8A878;
+  --gold:#B8973A;
+  --gl:#D4AF37;
+  --gl2:#F0CC55;
+  --blood:#8B1A1A;
+  --ember:#C0392B;
+  --steel:#2C3E50;
+  --garnet:#5C1A1A;
+  --txt:#E8DCC8;
+  --txt2:#C4B494;
+  --txt3:#9A8C78;
+  --sh:rgba(0,0,0,0.5);
+  --bdr:rgba(184,151,58,0.35);
+  --bdr2:rgba(184,151,58,0.18);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--stone);
+  font-family:'Crimson Text',Georgia,serif;
+  color:var(--txt);
+  min-height:100vh;
+  padding:1.2rem 1rem 4rem;
+  background-image:
+    radial-gradient(ellipse at 50% 0%,rgba(184,151,58,.06) 0%,transparent 60%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23B8973A' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.w{max-width:1020px;margin:0 auto;}
+header{text-align:center;margin-bottom:1.5rem;padding-top:.5rem;}
+h1{
+  font-family:'Cinzel',serif;font-size:1.6rem;font-weight:700;
+  color:var(--gl);letter-spacing:.18em;text-transform:uppercase;
+  text-shadow:0 0 30px rgba(212,175,55,.3),0 2px 4px rgba(0,0,0,.8);
+}
+header p{font-size:.88rem;color:var(--txt3);font-style:italic;letter-spacing:.06em;}
+.dv{
+  height:1px;
+  background:linear-gradient(to right,transparent,var(--gold),var(--gl2),var(--gold),transparent);
+  margin:.6rem auto;max-width:400px;
+  box-shadow:0 0 8px rgba(212,175,55,.2);
+}
+.tabs{display:flex;margin-bottom:1.3rem;border-bottom:1px solid var(--bdr);}
+.tb{
+  font-family:'Cinzel',serif;font-size:.72rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.12em;padding:.7rem 1.5rem;
+  cursor:pointer;color:var(--txt3);background:none;border:none;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .25s;
+}
+.tb:hover{color:var(--gl);}
+.tb.active{color:var(--gl);border-bottom-color:var(--gl);text-shadow:0 0 12px rgba(212,175,55,.3);}
+.tp{display:none;}.tp.active{display:block;}
+
+/* CARDS - parchemin brule */
+.card{
+  background:linear-gradient(145deg,#2E2820,#252118);
+  border:1px solid var(--bdr);border-radius:3px;
+  padding:1.1rem 1.3rem;margin-bottom:1rem;
+  box-shadow:0 6px 24px var(--sh),inset 0 1px 0 rgba(212,175,55,.08);
+  position:relative;
+}
+.card::before{content:'';position:absolute;inset:4px;border:1px solid var(--bdr2);border-radius:2px;pointer-events:none;}
+.ct{
+  font-family:'Cinzel',serif;font-size:.72rem;font-weight:600;
+  color:var(--gl);text-transform:uppercase;letter-spacing:.12em;
+  margin-bottom:.8rem;padding-bottom:.45rem;
+  border-bottom:1px solid var(--bdr);
+}
+.fl{
+  font-family:'Cinzel',serif;font-size:.67rem;font-weight:600;
+  color:var(--parch3);text-transform:uppercase;letter-spacing:.08em;
+  display:block;margin-bottom:.3rem;
+}
+input[type=text],input[type=number],select{
+  width:100%;
+  background:#1A1814;
+  border:1px solid rgba(184,151,58,.4);
+  border-radius:2px;padding:.38rem .6rem;
+  font-family:'Crimson Text',Georgia,serif;font-size:.9rem;
+  color:var(--txt);outline:none;transition:border-color .2s,box-shadow .2s;
+}
+input:focus,select:focus{
+  border-color:var(--gl);
+  box-shadow:0 0 0 2px rgba(212,175,55,.12);
+}
+input::placeholder{color:var(--txt3);font-style:italic;}
+select{
+  appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23D4AF37'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .6rem center;
+}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
+.ab{
+  background:none;border:1px dashed rgba(184,151,58,.3);border-radius:2px;
+  padding:.32rem .6rem;font-family:'Crimson Text',Georgia,serif;font-size:.82rem;
+  color:var(--txt3);cursor:pointer;transition:all .15s;
+  font-style:italic;width:100%;margin-top:.3rem;
+}
+.ab:hover{border-color:var(--gold);color:var(--parch2);}
+.rm{background:none;border:none;cursor:pointer;color:var(--blood);font-size:.95rem;padding:.1rem .3rem;transition:color .15s;flex-shrink:0;}
+.rm:hover{color:var(--ember);}
+.acb{
+  background:linear-gradient(135deg,rgba(184,151,58,.2),rgba(184,151,58,.1));
+  border:1px solid var(--gold);border-radius:2px;
+  padding:.48rem 1.2rem;font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--gl);
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.acb:hover{background:linear-gradient(135deg,rgba(184,151,58,.35),rgba(184,151,58,.2));box-shadow:0 0 16px rgba(212,175,55,.2);}
+.rb2{
+  background:none;border:1px solid rgba(184,151,58,.25);border-radius:2px;
+  padding:.44rem 1.2rem;font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--txt3);cursor:pointer;transition:all .2s;
+}
+.rb2:hover{border-color:var(--gold);color:var(--parch2);}
+
+/* CAMPS */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.cc{
+  background:linear-gradient(145deg,#2E2820,#232018);
+  border:1px solid var(--bdr);border-radius:3px;
+  padding:1rem 1.2rem;
+  box-shadow:0 6px 20px var(--sh);position:relative;
+}
+.cc::before{content:'';position:absolute;inset:4px;border:1px solid var(--bdr2);border-radius:2px;pointer-events:none;}
+
+/* Camp A - acier Stark/Targaryen */
+.hda{
+  background:linear-gradient(90deg,#1E2D3E,#2C3E50,#1E2D3E);
+  color:#C8DCEA;
+  border-bottom:1px solid rgba(120,170,220,.3);
+  border-radius:2px 2px 0 0;padding:.55rem .9rem;margin:-1rem -1.2rem .9rem;
+  font-family:'Cinzel',serif;font-size:.72rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.12em;
+  text-shadow:0 1px 3px rgba(0,0,0,.6);
+}
+/* Camp B - grenat Lannister/ennemi */
+.hdb{
+  background:linear-gradient(90deg,#3E1E1E,#5C2020,#3E1E1E);
+  color:#EAC8C8;
+  border-bottom:1px solid rgba(200,80,80,.3);
+  border-radius:2px 2px 0 0;padding:.55rem .9rem;margin:-1rem -1.2rem .9rem;
+  font-family:'Cinzel',serif;font-size:.72rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.12em;
+  text-shadow:0 1px 3px rgba(0,0,0,.6);
+}
+.sml{font-family:'Cinzel',serif;font-size:.57rem;color:var(--parch3);text-transform:uppercase;letter-spacing:.05em;text-align:center;display:block;margin-bottom:2px;}
+.combrow{
+  display:grid;grid-template-columns:1fr 100px auto;gap:.4rem;align-items:center;
+  background:rgba(0,0,0,.2);border:1px solid rgba(184,151,58,.25);
+  border-radius:2px;padding:.3rem .45rem;margin-bottom:.3rem;
+}
+.combrow input,.combrow select{padding:.22rem .35rem;font-size:.8rem;}
+.mrow{
+  display:grid;grid-template-columns:1fr 68px 80px 68px 58px auto;gap:.35rem;align-items:center;
+  background:rgba(0,0,0,.2);border:1px solid rgba(184,151,58,.25);
+  border-radius:2px;padding:.32rem .45rem;margin-bottom:.35rem;
+}
+.mrow input,.mrow select{padding:.22rem .3rem;font-size:.78rem;}
+
+/* STATS BOXES */
+.sr{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.8rem;}
+.sb{
+  background:linear-gradient(145deg,#201E1A,#1A1814);
+  border:1px solid var(--bdr);border-radius:3px;padding:.75rem .9rem;
+}
+.sba{border-color:rgba(70,130,180,.45);background:linear-gradient(145deg,#1A2030,#141C28);}
+.sbb{border-color:rgba(160,50,50,.45);background:linear-gradient(145deg,#201414,#180E0E);}
+.sl{font-family:'Cinzel',serif;font-size:.62rem;color:var(--parch2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem;}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:.35rem;margin-top:.35rem;}
+.ms{
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(184,151,58,.22);border-radius:2px;
+  padding:.38rem .35rem;text-align:center;
+}
+.ms .ml2{font-family:'Cinzel',serif;font-size:.54rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.18rem;}
+.ms .mv{font-family:'Cinzel',serif;font-size:.88rem;font-weight:600;color:var(--gl);}
+
+/* BATTLE ZONE */
+.bc{
+  background:linear-gradient(160deg,#1A1814,#131210);
+  border:1px solid var(--bdr);border-radius:3px;
+  padding:1.1rem 1.3rem;margin-bottom:1rem;position:relative;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.4);
+}
+.bc::before{content:'';position:absolute;inset:4px;border:1px solid var(--bdr2);border-radius:2px;pointer-events:none;}
+.ri{display:grid;grid-template-columns:1fr auto 1fr;gap:.7rem;align-items:end;margin-bottom:.8rem;}
+.vs{
+  font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;
+  color:var(--blood);text-align:center;padding-bottom:.3rem;
+  text-shadow:0 0 12px rgba(139,26,26,.5);
+}
+.rfd{display:flex;flex-direction:column;gap:.3rem;}
+.rfd label{font-family:'Cinzel',serif;font-size:.65rem;color:var(--parch3);text-transform:uppercase;letter-spacing:.08em;}
+.rfd input{
+  background:#0E0C0A;
+  border:1px solid rgba(184,151,58,.4);border-radius:2px;
+  padding:.45rem .7rem;font-family:'Cinzel',serif;
+  font-size:1.5rem;font-weight:700;color:var(--gl2);
+  text-align:center;outline:none;width:100%;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.5);
+  transition:border-color .2s,box-shadow .2s;
+}
+.rfd input:focus{border-color:var(--gl);box-shadow:inset 0 2px 6px rgba(0,0,0,.5),0 0 0 2px rgba(212,175,55,.15);}
+.egl{margin-top:.4rem;display:flex;flex-direction:column;gap:.22rem;}
+.egli{display:flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--parch3);font-style:italic;}
+.egli input[type=checkbox]{width:auto;accent-color:var(--gl);}
+
+/* RUPTURE BARS */
+.rbs{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;}
+.rbw .rbl{font-family:'Cinzel',serif;font-size:.64rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem;display:flex;justify-content:space-between;}
+.rbt{height:14px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;border:1px solid rgba(184,151,58,.2);}
+.rbf{height:100%;border-radius:2px;transition:width .5s ease,background .3s;box-shadow:0 0 6px currentColor;}
+.rbp{font-family:'Cinzel',serif;font-size:.7rem;text-align:center;margin-top:.25rem;font-weight:600;}
+
+/* RESULT */
+.rr{
+  background:linear-gradient(145deg,#1E1C18,#171510);
+  border:1px solid rgba(184,151,58,.3);border-radius:3px;
+  padding:.8rem 1rem;margin-bottom:.7rem;
+}
+.re{text-align:center;margin-bottom:.7rem;}
+.en{
+  font-family:'Cinzel',serif;font-size:2.8rem;font-weight:700;line-height:1;
+  text-shadow:0 0 20px currentColor;
+}
+.el{font-size:.82rem;color:var(--txt2);font-style:italic;}
+.dcp{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.6rem;}
+.dc{
+  background:#111008;
+  border:1px solid rgba(184,151,58,.18);border-radius:3px;padding:.55rem .75rem;
+}
+.dct{font-family:'Cinzel',serif;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.45rem;padding-bottom:.3rem;border-bottom:1px solid rgba(184,151,58,.2);}
+.dcta{color:#7BAFD4;}.dctb{color:#D47B7B;}
+.di{display:flex;justify-content:space-between;align-items:center;padding:.18rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.77rem;}
+.di:last-child{border-bottom:none;}
+.dil{color:var(--txt3);font-style:italic;}
+.div2{font-family:'Cinzel',serif;font-size:.74rem;font-weight:600;}
+.dit{padding:.3rem 0 0;margin-top:.2rem;border-top:1px solid rgba(184,151,58,.3);border-bottom:none;}
+.dit .dil{color:var(--gl);font-weight:600;font-style:normal;}
+.dit .div2{font-size:.9rem;color:var(--gl2);}
+.rqs{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.5rem;}
+.rq{background:rgba(0,0,0,.35);border:1px solid rgba(139,26,26,.3);border-radius:3px;padding:.5rem .7rem;}
+.rqt{font-family:'Cinzel',serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.28rem;}
+.rqi{padding:.14rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.77rem;color:var(--txt2);}
+.rqi:last-child{border-bottom:none;}
+.mns{
+  text-align:center;font-size:.77rem;color:var(--txt2);
+  margin-top:.45rem;padding:.4rem .6rem;
+  background:rgba(0,0,0,.25);border:1px solid var(--bdr2);border-radius:2px;
+}
+.fin{
+  background:linear-gradient(135deg,#0E0C0A,#1A0A0A);
+  border:1px solid var(--gold);border-radius:3px;
+  padding:1.3rem 1.5rem;text-align:center;margin-bottom:.8rem;
+  box-shadow:0 0 30px rgba(184,151,58,.15),inset 0 0 30px rgba(0,0,0,.5);
+}
+.fint{
+  font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;
+  color:var(--gl);letter-spacing:.14em;text-transform:uppercase;margin-bottom:.4rem;
+  text-shadow:0 0 20px rgba(212,175,55,.4);
+}
+.fins{font-size:.92rem;color:var(--txt2);font-style:italic;}
+.hl{display:flex;flex-direction:column;gap:.32rem;max-height:280px;overflow-y:auto;}
+.hi{
+  background:rgba(0,0,0,.2);border:1px solid rgba(184,151,58,.15);
+  border-radius:2px;padding:.38rem .65rem;
+  display:grid;grid-template-columns:52px 1fr 1fr 65px 1fr;gap:.4rem;align-items:center;font-size:.74rem;
+  transition:background .15s;
+}
+.hi:hover{background:rgba(184,151,58,.05);}
+.note{font-size:.7rem;color:var(--txt3);font-style:italic;margin-top:.25rem;}
+.g{color:#7ED899;}.r{color:#E87070;}.o{color:#E8A030;}.gol{color:var(--gl);}
+@media(max-width:660px){.cg,.g2,.sr,.ri,.dcp,.rqs,.rbs{grid-template-columns:1fr;}.sg{grid-template-columns:1fr 1fr;}.mrow{grid-template-columns:1fr 60px 70px 58px auto;}}
+</style>
+</head>
+<body>
+<div class="w">
+<header>
+  <div class="dv"></div>
+  <h1>Suivi de Bataille</h1>
+  <p>Outil MJ - COFAS</p>
+  <div class="dv"></div>
+</header>
+<div class="tabs">
+  <button class="tb active" onclick="sw('s')">Affrontement simple</button>
+  <button class="tb" onclick="sw('c')">Bataille en coalition</button>
+</div>
+
+<!-- SIMPLE -->
+<div class="tp active" id="tp-s">
+<div class="cg">
+  <div class="cc">
+    <div class="hda">Camp A</div>
+    <div style="margin-bottom:.55rem"><label class="fl">Nom</label><input type="text" id="sa-nom" placeholder="Ex: Maison Manderly" oninput="sCalc()"></div>
+    <div class="g2" style="margin-bottom:.55rem">
+      <div>
+        <label class="fl">Mil. Terrestre (1-10)</label>
+        <select id="sa-mil" onchange="onMilChange('a')">
+          <option value="">--</option>
+          <option value="1">1 - 750 h.</option><option value="2">2 - 1500 h.</option><option value="3">3 - 2750 h.</option>
+          <option value="4">4 - 4250 h.</option><option value="5">5 - 6000 h.</option><option value="6">6 - 8500 h.</option>
+          <option value="7">7 - 12500 h.</option><option value="8">8 - 18500 h.</option><option value="9">9 - 26000 h.</option>
+          <option value="10">10 - 35000 h.</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Cohesion Interne (1-10)</label>
+        <input type="number" id="sa-coh" min="1" max="10" value="5" oninput="sCalc()">
+        <p class="note">Pour les pertes uniquement</p>
+      </div>
+    </div>
+    <div style="margin-bottom:.45rem">
+      <label class="fl">Effectifs engages</label>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:.4rem;align-items:center">
+        <input type="number" id="sa-eff" min="0" placeholder="Nombre d'hommes" oninput="sCalc()">
+        <span id="sa-eff-hint" style="font-size:.78rem;color:#8899bb;font-style:italic;text-align:center">mediane</span>
+      </div>
+      <p class="note">Valeur mediane par defaut, modifiable</p>
+    </div>
+    <div style="margin-bottom:.45rem">
+      <label class="fl">Stratege</label>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:.4rem">
+        <input type="text" id="sa-strat-nom" placeholder="Nom...">
+        <select id="sa-strat-mil" onchange="sCalc()">
+          <option value="0">Aucun (-1)</option>
+          <option value="1">Mil.1 (-1)</option><option value="2">Mil.2 (0)</option>
+          <option value="3">Mil.3 (+1)</option><option value="4">Mil.4 (+1)</option><option value="5">Mil.5 (+2)</option>
+        </select>
+      </div>
+    </div>
+    <label class="fl">Combattants</label>
+    <div id="sa-combs"></div>
+    <button class="ab" onclick="addComb('sa')">+ Ajouter un combattant</button>
+  </div>
+  <div class="cc">
+    <div class="hdb">Camp B</div>
+    <div style="margin-bottom:.55rem"><label class="fl">Nom</label><input type="text" id="sb-nom" placeholder="Ex: Maison Royce" oninput="sCalc()"></div>
+    <div class="g2" style="margin-bottom:.55rem">
+      <div>
+        <label class="fl">Mil. Terrestre (1-10)</label>
+        <select id="sb-mil" onchange="onMilChange('b')">
+          <option value="">--</option>
+          <option value="1">1 - 750 h.</option><option value="2">2 - 1500 h.</option><option value="3">3 - 2750 h.</option>
+          <option value="4">4 - 4250 h.</option><option value="5">5 - 6000 h.</option><option value="6">6 - 8500 h.</option>
+          <option value="7">7 - 12500 h.</option><option value="8">8 - 18500 h.</option><option value="9">9 - 26000 h.</option>
+          <option value="10">10 - 35000 h.</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Cohesion Interne (1-10)</label>
+        <input type="number" id="sb-coh" min="1" max="10" value="5" oninput="sCalc()">
+        <p class="note">Pour les pertes uniquement</p>
+      </div>
+    </div>
+    <div style="margin-bottom:.45rem">
+      <label class="fl">Effectifs engages</label>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:.4rem;align-items:center">
+        <input type="number" id="sb-eff" min="0" placeholder="Nombre d'hommes" oninput="sCalc()">
+        <span id="sb-eff-hint" style="font-size:.78rem;color:#8899bb;font-style:italic;text-align:center">mediane</span>
+      </div>
+      <p class="note">Valeur mediane par defaut, modifiable</p>
+    </div>
+    <div style="margin-bottom:.45rem">
+      <label class="fl">Stratege</label>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:.4rem">
+        <input type="text" id="sb-strat-nom" placeholder="Nom...">
+        <select id="sb-strat-mil" onchange="sCalc()">
+          <option value="0">Aucun (-1)</option>
+          <option value="1">Mil.1 (-1)</option><option value="2">Mil.2 (0)</option>
+          <option value="3">Mil.3 (+1)</option><option value="4">Mil.4 (+1)</option><option value="5">Mil.5 (+2)</option>
+        </select>
+      </div>
+    </div>
+    <label class="fl">Combattants</label>
+    <div id="sb-combs"></div>
+    <button class="ab" onclick="addComb('sb')">+ Ajouter un combattant</button>
+  </div>
+</div>
+<div class="card"><div class="ct">Modificateurs avant-bataille</div>
+  <div class="g2">
+    <div><label class="fl" style="color:#7090c0">Camp A</label><div id="sbon-a"></div><button class="ab" onclick="addBonus('sbon-a','sCalc')">+ Ajouter</button></div>
+    <div><label class="fl" style="color:#c07070">Camp B</label><div id="sbon-b"></div><button class="ab" onclick="addBonus('sbon-b','sCalc')">+ Ajouter</button></div>
+  </div>
+</div>
+<div id="s-stats" style="display:none"></div>
+<div class="bc" id="s-bat" style="display:none">
+  <div style="font-family:'Cinzel',serif;font-size:.75rem;font-weight:600;color:var(--gl);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.9rem;padding-bottom:.45rem;border-bottom:1px solid rgba(196,169,110,.22)">Combat - Round <span id="s-rn">1</span></div>
+  <div class="rbs" id="s-rb"></div>
+  <div class="ri">
+    <div class="rfd"><label id="s-la">Camp A - D20</label><input type="number" id="s-da" min="1" max="20" placeholder="1-20"><div class="egl" id="s-ea"></div></div>
+    <div class="vs">VS</div>
+    <div class="rfd"><label id="s-lb" style="text-align:right">Camp B - D20</label><input type="number" id="s-db" min="1" max="20" placeholder="1-20"><div class="egl" id="s-eb"></div></div>
+  </div>
+  <div style="text-align:center;margin-bottom:.8rem"><button class="acb" onclick="sReso()">Resoudre le round</button></div>
+  <div id="s-res" style="display:none"></div>
+  <div id="s-fin" style="display:none"></div>
+  <div class="ct" style="margin-top:.8rem">Historique</div>
+  <div class="hl" id="s-hi"></div>
+</div>
+<div class="card" style="margin-top:.7rem">
+  <div class="ct">Seuil de treve</div>
+  <div style="display:grid;grid-template-columns:1fr 80px;gap:.6rem;align-items:center">
+    <label class="fl" style="margin:0">Si l'ecart final entre les deux totaux est inferieur a ce % du Capital max → treve (resultat indecis)</label>
+    <div style="display:flex;align-items:center;gap:.3rem">
+      <input type="number" id="s-treve" min="0" max="100" value="20" style="width:55px;text-align:center">
+      <span style="font-size:.8rem;color:#8899bb">%</span>
+    </div>
+  </div>
+</div>
+<div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem">
+  <button class="acb" onclick="sStart()">Lancer la bataille</button>
+  <button class="rb2" onclick="sReset()">Reinitialiser</button>
+</div>
+</div>
+
+<!-- COALITION -->
+<div class="tp" id="tp-c">
+<div class="cg">
+  <div class="cc">
+    <div class="hda">Coalition A</div>
+    <div style="margin-bottom:.55rem"><label class="fl">Nom</label><input type="text" id="ca-nom" placeholder="Ex: Forces du Nord" oninput="cCalc()"></div>
+    <label class="fl">Maisons alliees</label>
+    <div id="ca-mais"></div>
+    <button class="ab" onclick="addMaison('a')">+ Ajouter une Maison</button>
+    <div style="margin-top:.6rem">
+      <label class="fl">Stratege principal</label>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:.4rem">
+        <input type="text" id="ca-snom" placeholder="Nom...">
+        <select id="ca-smil" onchange="cCalc()">
+          <option value="0">Aucun (-1)</option>
+          <option value="1">Mil.1 (-1)</option><option value="2">Mil.2 (0)</option>
+          <option value="3">Mil.3 (+1)</option><option value="4">Mil.4 (+1)</option><option value="5">Mil.5 (+2)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:.5rem"><label class="fl">Combattants</label><div id="ca-combs"></div><button class="ab" onclick="addComb('ca')">+ Ajouter un combattant</button></div>
+  </div>
+  <div class="cc">
+    <div class="hdb">Coalition B</div>
+    <div style="margin-bottom:.55rem"><label class="fl">Nom</label><input type="text" id="cb-nom" placeholder="Ex: Forces du Vale" oninput="cCalc()"></div>
+    <label class="fl">Maisons alliees</label>
+    <div id="cb-mais"></div>
+    <button class="ab" onclick="addMaison('b')">+ Ajouter une Maison</button>
+    <div style="margin-top:.6rem">
+      <label class="fl">Stratege principal</label>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:.4rem">
+        <input type="text" id="cb-snom" placeholder="Nom...">
+        <select id="cb-smil" onchange="cCalc()">
+          <option value="0">Aucun (-1)</option>
+          <option value="1">Mil.1 (-1)</option><option value="2">Mil.2 (0)</option>
+          <option value="3">Mil.3 (+1)</option><option value="4">Mil.4 (+1)</option><option value="5">Mil.5 (+2)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:.5rem"><label class="fl">Combattants</label><div id="cb-combs"></div><button class="ab" onclick="addComb('cb')">+ Ajouter un combattant</button></div>
+  </div>
+</div>
+<div class="card"><div class="ct">Modificateurs avant-bataille</div>
+  <div class="g2">
+    <div><label class="fl" style="color:#7090c0">Coalition A</label><div id="cbon-a"></div><button class="ab" onclick="addBonus('cbon-a','cCalc')">+ Ajouter</button></div>
+    <div><label class="fl" style="color:#c07070">Coalition B</label><div id="cbon-b"></div><button class="ab" onclick="addBonus('cbon-b','cCalc')">+ Ajouter</button></div>
+  </div>
+</div>
+<div id="c-stats" style="display:none"></div>
+<div class="bc" id="c-bat" style="display:none">
+  <div style="font-family:'Cinzel',serif;font-size:.75rem;font-weight:600;color:var(--gl);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.9rem;padding-bottom:.45rem;border-bottom:1px solid rgba(196,169,110,.22)">Combat - Round <span id="c-rn">1</span></div>
+  <div class="rbs" id="c-rb"></div>
+  <div class="ri">
+    <div class="rfd"><label id="c-la">Coalition A - D20</label><input type="number" id="c-da" min="1" max="20" placeholder="1-20"><div class="egl" id="c-ea"></div></div>
+    <div class="vs">VS</div>
+    <div class="rfd"><label id="c-lb" style="text-align:right">Coalition B - D20</label><input type="number" id="c-db" min="1" max="20" placeholder="1-20"><div class="egl" id="c-eb"></div></div>
+  </div>
+  <div style="text-align:center;margin-bottom:.8rem"><button class="acb" onclick="cReso()">Resoudre le round</button></div>
+  <div id="c-res" style="display:none"></div>
+  <div id="c-fin" style="display:none"></div>
+  <div class="ct" style="margin-top:.8rem">Historique</div>
+  <div class="hl" id="c-hi"></div>
+</div>
+<div class="card" style="margin-top:.7rem">
+  <div class="ct">Seuil de treve</div>
+  <div style="display:grid;grid-template-columns:1fr 80px;gap:.6rem;align-items:center">
+    <label class="fl" style="margin:0">Si l'ecart final entre les deux totaux est inferieur a ce % du Capital max → treve (resultat indecis)</label>
+    <div style="display:flex;align-items:center;gap:.3rem">
+      <input type="number" id="c-treve" min="0" max="100" value="20" style="width:55px;text-align:center">
+      <span style="font-size:.8rem;color:#8899bb">%</span>
+    </div>
+  </div>
+</div>
+<div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem">
+  <button class="acb" onclick="cStart()">Lancer la bataille</button>
+  <button class="rb2" onclick="cReset()">Reinitialiser</button>
+</div>
+</div>
+
+<script>
+// ===== DATA TABLES =====
+var EFF = {1:750,2:1500,3:2750,4:4250,5:6000,6:8500,7:12500,8:18500,9:26000,10:35000};
+// Stratege mod: 0=aucun(-1), 1=-1, 2=0, 3=+1, 4=+1, 5=+2
+var MP = {0:-1,1:-1,2:0,3:1,4:1,5:2};
+// Combattant retrait: score 4=+1, 5=+1
+var CR = {1:0,2:0,3:0,4:1,5:1};
+// Combattant engage: score 2-3=+1, 4=+1, 5=+2
+var CE = {1:0,2:1,3:1,4:1,5:2};
+
+// ===== HELPERS =====
+function fv(v) { return v > 0 ? '+' + v : String(v); }
+function fc(v) { return v > 0 ? 'g' : v < 0 ? 'r' : 'gol'; }
+
+function cohLabel(v) {
+  var n = parseInt(v) || 5;
+  if (n <= 3) return 'x1.25';
+  if (n <= 6) return 'x1';
+  return 'x0.75';
+}
+
+function effToCapital(h) {
+  if (h < 2000) return 2;
+  if (h < 5000) return 3;
+  if (h < 10000) return 4;
+  if (h < 20000) return 5;
+  if (h < 35000) return 6;
+  return 7;
+}
+
+function milToCapital(mil) {
+  return (parseInt(mil) || 1) * 2;
+}
+
+function stratBonus(mil) {
+  return 0; // Capital fixe = Mil×2, pas de bonus strat sur le capital
+}
+
+function effMod(hA, hB) {
+  if (!hA || !hB || hA === hB) return {mA:0, mB:0, pct:0};
+  var g = Math.max(hA, hB);
+  var p = Math.min(hA, hB);
+  var m = Math.floor((g - p) / g * 100 / 10);
+  var pct = Math.floor((g - p) / g * 100);
+  if (hA > hB) return {mA:m, mB:0, pct:pct};
+  return {mA:0, mB:m, pct:pct};
+}
+
+function seuilVainq(effM) { return Math.max(3, 10 - effM); }
+function seuilPerd(effM) { return Math.min(19, 10 + effM); }
+
+function evalRound(ecart, seuil) {
+  if (ecart >= seuil) return {pts:99, label:'Deroute immediate', cls:'r'};
+  if (ecart >= 8) return {pts:3, label:'Superiorite claire', cls:'o'};
+  if (ecart >= 4) return {pts:2, label:'Avantage net', cls:'o'};
+  if (ecart >= 1) return {pts:1, label:'Avantage leger', cls:'gol'};
+  return {pts:0, label:'Egalite', cls:'gol'};
+}
+
+function roundMods(ecart) {
+  if (ecart >= 8) return {v:3, f:0};
+  if (ecart >= 4) return {v:2, f:0};
+  if (ecart >= 1) return {v:1, f:0};
+  return {v:0, f:0};
+}
+
+function risqueLabel(ecart, engage) {
+  if (engage) {
+    if (ecart >= 11) return '<span class="r">Mort probable</span>';
+    if (ecart >= 8) return '<span class="r">Blessure grave</span>';
+    if (ecart >= 3) return '<span class="o">Blessure legere</span>';
+    return '<span class="g">Sauf</span>';
+  } else {
+    if (ecart >= 11) return '<span class="r">Blessure grave</span>';
+    if (ecart >= 8) return '<span class="o">Blessure legere possible</span>';
+    return '<span class="g">Sauf</span>';
+  }
+}
+
+function buildMods(cfg) {
+  var items = [];
+  var stratScore = cfg.strat ? cfg.strat.score : 0;
+  var stratNom = cfg.strat ? cfg.strat.nom : 'Aucun stratege';
+  var stratMod = MP[stratScore] !== undefined ? MP[stratScore] : -1;
+  if (cfg.strat) {
+    items.push({label: 'Stratege ' + stratNom + ' (Mil.' + stratScore + ')', val: stratMod});
+  } else {
+    items.push({label: 'Aucun stratege', val: -1});
+  }
+  cfg.combsRetrait.forEach(function(c) {
+    if (c.score >= 4) {
+      var m = CR[c.score] || 0;
+      if (m !== 0) items.push({label: c.nom + ' en retrait (Comb.' + c.score + ')', val: m});
+    }
+  });
+  cfg.combsEngaged.forEach(function(c) {
+    var m = CE[c.score] || 0;
+    if (m !== 0) items.push({label: c.nom + ' ENGAGE (Comb.' + c.score + ')', val: m});
+  });
+  if (cfg.effMod !== 0) items.push({label: 'Superiorite numerique (+' + cfg.effPct + '%)', val: cfg.effMod});
+  if (cfg.roundMod !== 0) items.push({label: 'Elan round precedent', val: cfg.roundMod});
+  if (cfg.bonus !== 0) items.push({label: 'Bonus avant-bataille', val: cfg.bonus});
+  var total = 0;
+  items.forEach(function(i) { total += i.val; });
+  return {items: items, total: total};
+}
+
+function getBonus(divId) {
+  var t = 0;
+  var rows = document.querySelectorAll('#' + divId + ' .bval');
+  rows.forEach(function(i) { t += parseInt(i.value) || 0; });
+  return t;
+}
+
+function addBonus(divId, fn) {
+  var d = document.getElementById(divId);
+  var r = document.createElement('div');
+  r.className = 'brow';
+  r.style.cssText = 'display:grid;grid-template-columns:1fr 60px auto;gap:.32rem;align-items:center;margin-bottom:.28rem';
+  r.innerHTML = '<input type="text" placeholder="Description..." style="font-size:.8rem;padding:.22rem .38rem">' +
+    '<input type="number" class="bval" min="0" max="8" value="1" style="font-size:.8rem;padding:.22rem .38rem;text-align:center" oninput="' + fn + '()">' +
+    '<button class="rm" onclick="this.closest(\'.brow\').remove();' + fn + '()">x</button>';
+  d.appendChild(r);
+}
+
+function addComb(prefix) {
+  var id = 'cb-' + Date.now();
+  var c = document.getElementById(prefix + '-combs');
+  var r = document.createElement('div');
+  r.className = 'combrow';
+  r.dataset.id = id;
+  var isS = prefix.charAt(0) === 's';
+  var fn = isS ? 'sCalc' : 'cCalc';
+  r.innerHTML = '<input type="text" placeholder="Nom..." oninput="' + fn + '()">' +
+    '<select onchange="' + fn + '()">' +
+    '<option value="">Aucun</option>' +
+    '<option value="1">Comb.1 (0/0)</option>' +
+    '<option value="2">Comb.2 (0/+1)</option>' +
+    '<option value="3">Comb.3 (0/+1)</option>' +
+    '<option value="4">Comb.4 (+1/+1)</option>' +
+    '<option value="5">Comb.5 (+1/+2)</option>' +
+    '</select>' +
+    '<button class="rm" onclick="this.closest(\'.combrow\').remove();' + fn + '()">x</button>';
+  c.appendChild(r);
+}
+
+function addMaison(camp) {
+  var id = 'm-' + Date.now();
+  var c = document.getElementById('c' + camp + '-mais');
+  var r = document.createElement('div');
+  r.className = 'mrow';
+  r.dataset.id = id;
+  var opts = '<option value="">--</option>';
+  for (var i = 1; i <= 10; i++) opts += '<option value="' + i + '">' + i + '</option>';
+  r.innerHTML = '<input type="text" placeholder="Maison...">' +
+    '<div><span class="sml">Mil.Terr.</span><select onchange="cCalc()">' + opts + '</select></div>' +
+    '<div><span class="sml">Coh.% (0-100)</span><input type="number" class="coh-pct" min="0" max="100" value="60" oninput="cCalc()"></div>' +
+    '<div><span class="sml">Hommes</span><span class="hval" style="font-family:\'Cinzel\',serif;font-size:.72rem;color:var(--gl);display:block;text-align:center;padding-top:3px">--</span></div>' +
+    '<div><span class="sml">Capital</span><span class="kval" style="font-family:\'Cinzel\',serif;font-size:.72rem;color:var(--gl);display:block;text-align:center;padding-top:2px">--</span></div>' +
+    '<button class="rm" onclick="this.closest(\'.mrow\').remove();cCalc()">x</button>';
+  c.appendChild(r);
+  cCalc();
+}
+
+function getCampData(camp) {
+  var totMil = 0, totH = 0;
+  var rows = document.querySelectorAll('#c' + camp + '-mais .mrow');
+  rows.forEach(function(row) {
+    var mil = parseInt(row.querySelector('select').value) || 0;
+    var pct = Math.min(100, Math.max(0, parseInt(row.querySelector('.coh-pct').value) || 60));
+    if (mil) {
+      totMil += mil;
+      var h = Math.round(EFF[mil] * (pct / 100));
+      totH += h;
+      row.querySelector('.hval').textContent = h.toLocaleString();
+      row.querySelector('.kval').textContent = milToCapital(mil);
+    } else {
+      row.querySelector('.hval').textContent = '--';
+      row.querySelector('.kval').textContent = '--';
+    }
+  });
+  return {totMil: totMil, hommes: totH, capital: milToCapital(totMil)};
+}
+
+function onMilChange(camp) {
+  var mil = parseInt(document.getElementById('s' + camp + '-mil').value) || 0;
+  var effEl = document.getElementById('s' + camp + '-eff');
+  var hint = document.getElementById('s' + camp + '-eff-hint');
+  if (mil) {
+    var med = EFF[mil];
+    effEl.value = med;
+    hint.textContent = 'mediane: ' + med.toLocaleString() + ' h.';
+  } else {
+    effEl.value = '';
+    hint.textContent = 'mediane';
+  }
+  sCalc();
+}
+
+function updateEngBoxes(prefix, used) {
+  ['a', 'b'].forEach(function(camp) {
+    var el = document.getElementById(prefix + '-e' + camp);
+    if (!el) return;
+    el.innerHTML = '';
+    var rows = document.querySelectorAll('#' + prefix + camp + '-combs .combrow');
+    rows.forEach(function(row) {
+      var id = row.dataset.id;
+      var score = parseInt(row.querySelector('select').value) || 0;
+      var nom = row.querySelector('input').value || 'Combattant';
+      if (!score || used[id]) return;
+      var div = document.createElement('div');
+      div.className = 'egli';
+      div.innerHTML = '<input type="checkbox" id="e-' + id + '" data-id="' + id + '" data-score="' + score + '" data-nom="' + nom + '"> ' +
+        '<label for="e-' + id + '" style="cursor:pointer">Engager ' + nom + ' (Comb.' + score + ')</label>';
+      el.appendChild(div);
+    });
+  });
+}
+
+function rBarsHTML(nA, nB, pA, cA, pB, cB) {
+  var pcA = cA ? Math.min(100, Math.round(pA / cA * 100)) : 0;
+  var pcB = cB ? Math.min(100, Math.round(pB / cB * 100)) : 0;
+  var colA = pcA >= 75 ? '#e07070' : pcA >= 50 ? '#e0a030' : '#6dca8a';
+  var colB = pcB >= 75 ? '#e07070' : pcB >= 50 ? '#e0a030' : '#6dca8a';
+  return '<div class="rbw"><div class="rbl"><span style="color:#7090c0">' + nA + '</span><span>Rupture</span></div>' +
+    '<div class="rbt"><div class="rbf" style="width:' + pcA + '%;background:' + colA + '"></div></div>' +
+    '<div class="rbp" style="color:' + colA + '">' + pA + ' / ' + cA + ' pts</div></div>' +
+    '<div class="rbw"><div class="rbl"><span style="color:#c07070">' + nB + '</span><span>Rupture</span></div>' +
+    '<div class="rbt"><div class="rbf" style="width:' + pcB + '%;background:' + colB + '"></div></div>' +
+    '<div class="rbp" style="color:' + colB + '">' + pB + ' / ' + cB + ' pts</div></div>';
+}
+
+function statsHTML(nA, nB, hA, hB, capA, capB, em, mA, mB, cohA, cohB, stA, stB) {
+  var capLblA = String(capA) + ' pts';
+  var capLblB = String(capB) + ' pts';
+  var svA = em.mA >= em.mB ? seuilVainq(em.mA) : seuilPerd(em.mB);
+  var svB = em.mB >= em.mA ? seuilVainq(em.mB) : seuilPerd(em.mA);
+  return '<div class="sr">' +
+    '<div class="sb sba"><div class="sl">' + nA + '</div><div class="sg">' +
+    '<div class="ms"><span class="ml2">Effectifs</span><span class="mv" style="font-size:.75rem">' + hA.toLocaleString() + '</span></div>' +
+    '<div class="ms"><span class="ml2">Capital</span><span class="mv" style="font-size:.72rem">' + capLblA + '</span></div>' +
+    '<div class="ms"><span class="ml2">Mod.total</span><span class="mv ' + fc(mA) + '">' + fv(mA) + '</span></div>' +
+    '<div class="ms"><span class="ml2">Coh.pertes</span><span class="mv" style="font-size:.62rem">' + cohLabel(cohA) + '</span></div>' +
+    '</div></div>' +
+    '<div class="sb sbb"><div class="sl">' + nB + '</div><div class="sg">' +
+    '<div class="ms"><span class="ml2">Effectifs</span><span class="mv" style="font-size:.75rem">' + hB.toLocaleString() + '</span></div>' +
+    '<div class="ms"><span class="ml2">Capital</span><span class="mv" style="font-size:.72rem">' + capLblB + '</span></div>' +
+    '<div class="ms"><span class="ml2">Mod.total</span><span class="mv ' + fc(mB) + '">' + fv(mB) + '</span></div>' +
+    '<div class="ms"><span class="ml2">Coh.pertes</span><span class="mv" style="font-size:.62rem">' + cohLabel(cohB) + '</span></div>' +
+    '</div></div>' +
+    '</div>' +
+    '<div class="bc" style="padding:.55rem .9rem;margin-bottom:.7rem">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.8rem;text-align:center;font-size:.78rem;color:#8899bb">' +
+    '<div>Ecart numerique<br><strong class="gol" style="font-family:\'Cinzel\',serif">' + em.pct + '%</strong><br><span style="font-size:.68rem">(+1 mod./10%)</span></div>' +
+    '<div>' + nA + ' - ' + hA.toLocaleString() + ' h.<br><strong class="' + fc(em.mA) + '" style="font-family:\'Cinzel\',serif">' + fv(em.mA) + ' au score</strong></div>' +
+    '<div>' + nB + ' - ' + hB.toLocaleString() + ' h.<br><strong class="' + fc(em.mB) + '" style="font-family:\'Cinzel\',serif">' + fv(em.mB) + ' au score</strong></div>' +
+    '<div>Seuil deroute<br><strong style="color:#7090c0;font-family:\'Cinzel\',serif">=' + svA + ' ' + nA + '</strong><br><strong style="color:#c07070;font-family:\'Cinzel\',serif">=' + svB + ' ' + nB + '</strong></div>' +
+    '</div></div>';
+}
+
+function decompoHTML(nA, nB, mA, mB, d20A, d20B, sA, sB) {
+  function col(m, d20, score) {
+    var rows = '<div class="di"><span class="dil">D20 lance</span><span class="div2 gol">' + d20 + '</span></div>';
+    m.items.forEach(function(i) {
+      rows += '<div class="di"><span class="dil">' + i.label + '</span><span class="div2 ' + fc(i.val) + '">' + fv(i.val) + '</span></div>';
+    });
+    var col2 = score > d20 ? '#6dca8a' : '#e07070';
+    rows += '<div class="di dit"><span class="dil" style="font-style:normal;font-weight:500">Score total</span><span class="div2" style="font-size:.9rem;color:' + col2 + '">' + score + '</span></div>';
+    return rows;
+  }
+  return '<div class="dcp">' +
+    '<div class="dc"><div class="dct dcta">Score - ' + nA + '</div>' + col(mA, d20A, sA) + '</div>' +
+    '<div class="dc"><div class="dct dctb">Score - ' + nB + '</div>' + col(mB, d20B, sB) + '</div>' +
+    '</div>';
+}
+
+// ===== SIMPLE STATE =====
+var SS = {round:1, pA:0, pB:0, mA:0, mB:0, capA:0, capB:0, fin:false, used:{}, hA:0, hB:0, em:{mA:0,mB:0,pct:0}};
+
+function sGetRetrait(camp, used, eng) {
+  var rows = document.querySelectorAll('#s' + camp + '-combs .combrow');
+  var result = [];
+  rows.forEach(function(r) {
+    var id = r.dataset.id;
+    var score = parseInt(r.querySelector('select').value) || 0;
+    var nom = r.querySelector('input').value || 'Combattant';
+    if (!used[id] && !eng.find(function(e) { return e.id === id; }) && score >= 4) {
+      result.push({id:id, score:score, nom:nom});
+    }
+  });
+  return result;
+}
+
+function sCalc() {
+  var milA = parseInt(document.getElementById('sa-mil').value) || 0;
+  var milB = parseInt(document.getElementById('sb-mil').value) || 0;
+  var hA = parseInt(document.getElementById('sa-eff').value) || 0;
+  var hB = parseInt(document.getElementById('sb-eff').value) || 0;
+  if (!hA || !hB) { document.getElementById('s-stats').style.display = 'none'; document.getElementById('s-bat').style.display = 'none'; return; }
+  var em = effMod(hA, hB);
+  var stA = parseInt(document.getElementById('sa-strat-mil').value) || 0;
+  var stB = parseInt(document.getElementById('sb-strat-mil').value) || 0;
+  var capA = milToCapital(milA);
+  var capB = milToCapital(milB);
+  SS.hA = hA; SS.hB = hB; SS.em = em; SS.capA = capA; SS.capB = capB;
+  var nA = document.getElementById('sa-nom').value || 'Camp A';
+  var nB = document.getElementById('sb-nom').value || 'Camp B';
+  var bonA = getBonus('sbon-a'); var bonB = getBonus('sbon-b');
+  var cohA = document.getElementById('sa-coh').value;
+  var cohB = document.getElementById('sb-coh').value;
+  var mA = buildMods({strat: stA ? {score:stA, nom:document.getElementById('sa-strat-nom').value||'Stratege'} : null, combsRetrait:sGetRetrait('a',SS.used,[]), combsEngaged:[], bonus:bonA, effMod:em.mA, effPct:em.pct, roundMod:SS.mA});
+  var mB = buildMods({strat: stB ? {score:stB, nom:document.getElementById('sb-strat-nom').value||'Stratege'} : null, combsRetrait:sGetRetrait('b',SS.used,[]), combsEngaged:[], bonus:bonB, effMod:em.mB, effPct:em.pct, roundMod:SS.mB});
+  document.getElementById('s-stats').style.display = 'block';
+  document.getElementById('s-stats').innerHTML = statsHTML(nA, nB, hA, hB, capA, capB, em, mA.total, mB.total, cohA, cohB, stA, stB);
+  document.getElementById('s-la').textContent = nA + ' - D20';
+  document.getElementById('s-lb').textContent = nB + ' - D20';
+  if (document.getElementById('s-bat').style.display !== 'none') {
+    document.getElementById('s-rb').innerHTML = rBarsHTML(nA, nB, SS.pA, SS.capA, SS.pB, SS.capB);
+    updateEngBoxes('s', SS.used);
+  }
+}
+
+function sStart() {
+  var hA = parseInt(document.getElementById('sa-eff').value) || 0;
+  var hB = parseInt(document.getElementById('sb-eff').value) || 0;
+  if (!hA || !hB) { alert('Renseignez les effectifs des deux camps.'); return; }
+  var milA = parseInt(document.getElementById('sa-mil').value) || 0;
+  var milB = parseInt(document.getElementById('sb-mil').value) || 0;
+  if (!milA || !milB) { alert('Renseignez le score Mil. Terrestre des deux camps.'); return; }
+  sCalc();
+  var capA = milToCapital(milA);
+  var capB = milToCapital(milB);
+  var nA = document.getElementById('sa-nom').value || 'Camp A';
+  var nB = document.getElementById('sb-nom').value || 'Camp B';
+  SS = {round:1, pA:0, pB:0, mA:0, mB:0, capA:capA, capB:capB, fin:false, used:{}, hA:hA, hB:hB, em:SS.em};
+  document.getElementById('s-bat').style.display = 'block';
+  document.getElementById('s-rn').textContent = '1';
+  document.getElementById('s-res').style.display = 'none';
+  document.getElementById('s-fin').style.display = 'none';
+  document.getElementById('s-hi').innerHTML = '';
+  document.getElementById('s-da').value = '';
+  document.getElementById('s-db').value = '';
+  document.getElementById('s-rb').innerHTML = rBarsHTML(nA, nB, 0, capA, 0, capB);
+  updateEngBoxes('s', {});
+}
+
+function sReso() {
+  if (SS.fin) return;
+  var d20A = parseInt(document.getElementById('s-da').value);
+  var d20B = parseInt(document.getElementById('s-db').value);
+  if (!d20A || !d20B || d20A < 1 || d20A > 20 || d20B < 1 || d20B > 20) { alert('D20 valides requis (1-20).'); return; }
+  var nA = document.getElementById('sa-nom').value || 'Camp A';
+  var nB = document.getElementById('sb-nom').value || 'Camp B';
+  var stA = parseInt(document.getElementById('sa-strat-mil').value) || 0;
+  var stB = parseInt(document.getElementById('sb-strat-mil').value) || 0;
+  var bonA = getBonus('sbon-a'); var bonB = getBonus('sbon-b');
+  var engA = []; var engB = [];
+  document.querySelectorAll('#s-ea input:checked').forEach(function(cb) { engA.push({id:cb.dataset.id, score:parseInt(cb.dataset.score), nom:cb.dataset.nom}); SS.used[cb.dataset.id] = true; });
+  document.querySelectorAll('#s-eb input:checked').forEach(function(cb) { engB.push({id:cb.dataset.id, score:parseInt(cb.dataset.score), nom:cb.dataset.nom}); SS.used[cb.dataset.id] = true; });
+  var retA = sGetRetrait('a', SS.used, engA);
+  var retB = sGetRetrait('b', SS.used, engB);
+  var mA = buildMods({strat:stA?{score:stA,nom:document.getElementById('sa-strat-nom').value||'Stratege'}:null, combsRetrait:retA, combsEngaged:engA, bonus:bonA, effMod:SS.em.mA, effPct:SS.em.pct, roundMod:SS.mA});
+  var mB = buildMods({strat:stB?{score:stB,nom:document.getElementById('sb-strat-nom').value||'Stratege'}:null, combsRetrait:retB, combsEngaged:engB, bonus:bonB, effMod:SS.em.mB, effPct:SS.em.pct, roundMod:SS.mB});
+  var cohA = document.getElementById('sa-coh').value;
+  var cohB = document.getElementById('sb-coh').value;
+  resolveRound('s', nA, nB, d20A, d20B, d20A + mA.total, d20B + mB.total, mA, mB, engA, engB, stA, stB, document.getElementById('sa-strat-nom').value, document.getElementById('sb-strat-nom').value, cohA, cohB);
+}
+
+function sReset() {
+  SS = {round:1, pA:0, pB:0, mA:0, mB:0, capA:0, capB:0, fin:false, used:{}, hA:0, hB:0, em:{mA:0,mB:0,pct:0}};
+  document.getElementById('s-stats').style.display = 'none';
+  document.getElementById('s-bat').style.display = 'none';
+  ['sa-mil','sb-mil'].forEach(function(id) { document.getElementById(id).value = ''; });
+  ['sa-nom','sb-nom','sa-strat-nom','sb-strat-nom','sa-eff','sb-eff'].forEach(function(id) { document.getElementById(id).value = ''; });
+  ['sa-coh','sb-coh'].forEach(function(id) { document.getElementById(id).value = '5'; });
+  ['sa-strat-mil','sb-strat-mil'].forEach(function(id) { document.getElementById(id).value = '0'; });
+  document.getElementById('sa-combs').innerHTML = '';
+  document.getElementById('sb-combs').innerHTML = '';
+  document.getElementById('sbon-a').innerHTML = '';
+  document.getElementById('sbon-b').innerHTML = '';
+  ['sa-eff-hint','sb-eff-hint'].forEach(function(id) { document.getElementById(id).textContent = 'mediane'; });
+}
+
+// ===== COALITION STATE =====
+var CS = {round:1, pA:0, pB:0, mA:0, mB:0, capA:0, capB:0, fin:false, used:{}, hA:0, hB:0, em:{mA:0,mB:0,pct:0}};
+
+function cCalc() {
+  var dA = getCampData('a');
+  var dB = getCampData('b');
+  if (!dA.hommes || !dB.hommes) { document.getElementById('c-stats').style.display = 'none'; document.getElementById('c-bat').style.display = 'none'; return; }
+  var em = effMod(dA.hommes, dB.hommes);
+  var stA = parseInt(document.getElementById('ca-smil').value) || 0;
+  var stB = parseInt(document.getElementById('cb-smil').value) || 0;
+  var capA = dA.capital;
+  var capB = dB.capital;
+  CS.hA = dA.hommes; CS.hB = dB.hommes; CS.em = em; CS.capA = capA; CS.capB = capB;
+  var nA = document.getElementById('ca-nom').value || 'Coalition A';
+  var nB = document.getElementById('cb-nom').value || 'Coalition B';
+  var bonA = getBonus('cbon-a'); var bonB = getBonus('cbon-b');
+  var nbA = document.querySelectorAll('#ca-mais .mrow').length;
+  var nbB = document.querySelectorAll('#cb-mais .mrow').length;
+  var retA = [];
+  document.querySelectorAll('#ca-combs .combrow').forEach(function(r) {
+    if (!CS.used[r.dataset.id]) { var s = parseInt(r.querySelector('select').value)||0; if (s >= 4) retA.push({id:r.dataset.id, score:s, nom:r.querySelector('input').value||'Combattant'}); }
+  });
+  var retB = [];
+  document.querySelectorAll('#cb-combs .combrow').forEach(function(r) {
+    if (!CS.used[r.dataset.id]) { var s = parseInt(r.querySelector('select').value)||0; if (s >= 4) retB.push({id:r.dataset.id, score:s, nom:r.querySelector('input').value||'Combattant'}); }
+  });
+  var mA = buildMods({strat:stA?{score:stA,nom:document.getElementById('ca-snom').value||'Stratege'}:null, combsRetrait:retA, combsEngaged:[], bonus:bonA, effMod:em.mA, effPct:em.pct, roundMod:CS.mA});
+  var mB = buildMods({strat:stB?{score:stB,nom:document.getElementById('cb-snom').value||'Stratege'}:null, combsRetrait:retB, combsEngaged:[], bonus:bonB, effMod:em.mB, effPct:em.pct, roundMod:CS.mB});
+  var capLblA = String(capA) + ' pts';
+  var capLblB = String(capB) + ' pts';
+  document.getElementById('c-stats').style.display = 'block';
+  document.getElementById('c-stats').innerHTML = '<div class="sr">' +
+    '<div class="sb sba"><div class="sl">' + nA + ' <span style="font-size:.68rem;opacity:.7">' + nbA + ' maison(s)</span></div><div class="sg">' +
+    '<div class="ms"><span class="ml2">Hommes</span><span class="mv g" style="font-size:.72rem">' + dA.hommes.toLocaleString() + '</span></div>' +
+    '<div class="ms"><span class="ml2">Capital</span><span class="mv" style="font-size:.72rem">' + capLblA + '</span></div>' +
+    '<div class="ms"><span class="ml2">Mod.total</span><span class="mv ' + fc(mA.total) + '">' + fv(mA.total) + '</span></div>' +
+    '<div class="ms"><span class="ml2">Mod.eff.</span><span class="mv ' + fc(em.mA) + '">' + fv(em.mA) + '</span></div>' +
+    '</div></div>' +
+    '<div class="sb sbb"><div class="sl">' + nB + ' <span style="font-size:.68rem;opacity:.7">' + nbB + ' maison(s)</span></div><div class="sg">' +
+    '<div class="ms"><span class="ml2">Hommes</span><span class="mv g" style="font-size:.72rem">' + dB.hommes.toLocaleString() + '</span></div>' +
+    '<div class="ms"><span class="ml2">Capital</span><span class="mv" style="font-size:.72rem">' + capLblB + '</span></div>' +
+    '<div class="ms"><span class="ml2">Mod.total</span><span class="mv ' + fc(mB.total) + '">' + fv(mB.total) + '</span></div>' +
+    '<div class="ms"><span class="ml2">Mod.eff.</span><span class="mv ' + fc(em.mB) + '">' + fv(em.mB) + '</span></div>' +
+    '</div></div>' +
+    '</div>' +
+    '<div class="bc" style="padding:.55rem .9rem;margin-bottom:.7rem"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;text-align:center;font-size:.78rem;color:#8899bb">' +
+    '<div>Ecart numerique<br><strong class="gol" style="font-family:\'Cinzel\',serif">' + em.pct + '%</strong></div>' +
+    '<div>' + nA + ' - ' + dA.hommes.toLocaleString() + ' h.<br><strong class="' + fc(em.mA) + '" style="font-family:\'Cinzel\',serif">' + fv(em.mA) + ' au score</strong></div>' +
+    '<div>' + nB + ' - ' + dB.hommes.toLocaleString() + ' h.<br><strong class="' + fc(em.mB) + '" style="font-family:\'Cinzel\',serif">' + fv(em.mB) + ' au score</strong></div>' +
+    '</div></div>';
+  document.getElementById('c-la').textContent = nA + ' - D20';
+  document.getElementById('c-lb').textContent = nB + ' - D20';
+  if (document.getElementById('c-bat').style.display !== 'none') {
+    document.getElementById('c-rb').innerHTML = rBarsHTML(nA, nB, CS.pA, CS.capA, CS.pB, CS.capB);
+    updateEngBoxes('c', CS.used);
+  }
+}
+
+function cStart() {
+  var dA = getCampData('a'); var dB = getCampData('b');
+  if (!dA.hommes || !dB.hommes) { alert('Ajoutez au moins une Maison par coalition.'); return; }
+  cCalc();
+  var nA = document.getElementById('ca-nom').value || 'Coalition A';
+  var nB = document.getElementById('cb-nom').value || 'Coalition B';
+  CS = {round:1, pA:0, pB:0, mA:0, mB:0, capA:CS.capA, capB:CS.capB, fin:false, used:{}, hA:CS.hA, hB:CS.hB, em:CS.em};
+  document.getElementById('c-bat').style.display = 'block';
+  document.getElementById('c-rn').textContent = '1';
+  document.getElementById('c-res').style.display = 'none';
+  document.getElementById('c-fin').style.display = 'none';
+  document.getElementById('c-hi').innerHTML = '';
+  document.getElementById('c-da').value = '';
+  document.getElementById('c-db').value = '';
+  document.getElementById('c-rb').innerHTML = rBarsHTML(nA, nB, 0, CS.capA, 0, CS.capB);
+  updateEngBoxes('c', {});
+}
+
+function cReso() {
+  if (CS.fin) return;
+  var d20A = parseInt(document.getElementById('c-da').value);
+  var d20B = parseInt(document.getElementById('c-db').value);
+  if (!d20A || !d20B || d20A < 1 || d20A > 20 || d20B < 1 || d20B > 20) { alert('D20 valides requis (1-20).'); return; }
+  var nA = document.getElementById('ca-nom').value || 'Coalition A';
+  var nB = document.getElementById('cb-nom').value || 'Coalition B';
+  var stA = parseInt(document.getElementById('ca-smil').value) || 0;
+  var stB = parseInt(document.getElementById('cb-smil').value) || 0;
+  var bonA = getBonus('cbon-a'); var bonB = getBonus('cbon-b');
+  var engA = []; var engB = [];
+  document.querySelectorAll('#c-ea input:checked').forEach(function(cb) { engA.push({id:cb.dataset.id, score:parseInt(cb.dataset.score), nom:cb.dataset.nom}); CS.used[cb.dataset.id] = true; });
+  document.querySelectorAll('#c-eb input:checked').forEach(function(cb) { engB.push({id:cb.dataset.id, score:parseInt(cb.dataset.score), nom:cb.dataset.nom}); CS.used[cb.dataset.id] = true; });
+  var retA = []; var retB = [];
+  document.querySelectorAll('#ca-combs .combrow').forEach(function(r) {
+    if (!CS.used[r.dataset.id] && !engA.find(function(e){return e.id===r.dataset.id;})) { var s=parseInt(r.querySelector('select').value)||0; if(s>=4) retA.push({id:r.dataset.id,score:s,nom:r.querySelector('input').value||'Combattant'}); }
+  });
+  document.querySelectorAll('#cb-combs .combrow').forEach(function(r) {
+    if (!CS.used[r.dataset.id] && !engB.find(function(e){return e.id===r.dataset.id;})) { var s=parseInt(r.querySelector('select').value)||0; if(s>=4) retB.push({id:r.dataset.id,score:s,nom:r.querySelector('input').value||'Combattant'}); }
+  });
+  var mA = buildMods({strat:stA?{score:stA,nom:document.getElementById('ca-snom').value||'Stratege'}:null, combsRetrait:retA, combsEngaged:engA, bonus:bonA, effMod:CS.em.mA, effPct:CS.em.pct, roundMod:CS.mA});
+  var mB = buildMods({strat:stB?{score:stB,nom:document.getElementById('cb-snom').value||'Stratege'}:null, combsRetrait:retB, combsEngaged:engB, bonus:bonB, effMod:CS.em.mB, effPct:CS.em.pct, roundMod:CS.mB});
+  resolveRound('c', nA, nB, d20A, d20B, d20A + mA.total, d20B + mB.total, mA, mB, engA, engB, stA, stB, document.getElementById('ca-snom').value, document.getElementById('cb-snom').value, '5', '5');
+}
+
+function cReset() {
+  CS = {round:1, pA:0, pB:0, mA:0, mB:0, capA:0, capB:0, fin:false, used:{}, hA:0, hB:0, em:{mA:0,mB:0,pct:0}};
+  document.getElementById('c-stats').style.display = 'none';
+  document.getElementById('c-bat').style.display = 'none';
+  document.getElementById('ca-mais').innerHTML = '';
+  document.getElementById('cb-mais').innerHTML = '';
+  document.getElementById('ca-combs').innerHTML = '';
+  document.getElementById('cb-combs').innerHTML = '';
+  document.getElementById('cbon-a').innerHTML = '';
+  document.getElementById('cbon-b').innerHTML = '';
+  ['ca-nom','cb-nom','ca-snom','cb-snom'].forEach(function(id) { document.getElementById(id).value = ''; });
+  ['ca-smil','cb-smil'].forEach(function(id) { document.getElementById(id).value = '0'; });
+}
+
+// ===== RESOLVE ROUND =====
+
+// ===== PERTES HELPERS =====
+function pertesLabel(ecartFinal, capMax, rounds, coh) {
+  // Base : ecart en % du Capital max
+  var pct = capMax > 0 ? ecartFinal / capMax : 0;
+  var base, baseV;
+  if (pct >= 0.75) { base = '60-80%'; baseV = '< 5%'; }
+  else if (pct >= 0.5) { base = '40-60%'; baseV = '10-20%'; }
+  else if (pct >= 0.25) { base = '20-35%'; baseV = '10-15%'; }
+  else { base = '10-20%'; baseV = '5-10%'; }
+  // Duree : +1 palier si 4-5 rounds
+  var durNote = rounds >= 4 ? ' (longue bataille : +5 a 10%)' : rounds <= 1 ? ' (eclair)' : '';
+  var cohCoef = cohLabel(coh);
+  return {perd: base + durNote, vainq: baseV, coef: cohCoef};
+}
+
+function buildFinMessage(prefix, nA, nB, aG, eg, ecart, res, simul, aR, bR, ST, cohA, cohB) {
+  var isDerouteImm = res.pts === 99;
+  var isDeroute = isDerouteImm || aR || bR; // capital atteint = deroute
+  var capMax = Math.max(ST.capA, ST.capB);
+
+  if (simul || (isDerouteImm && eg)) {
+    var pA = pertesLabel(ST.capA, capMax, ST.round, cohA);
+    var pB = pertesLabel(ST.capB, capMax, ST.round, cohB);
+    return '<div class="fin"><div class="fint">Deroute simultanee</div>' +
+      '<div class="fins">Les deux armees sont en deroute — elles sont decimees et dispersees. Le MJ tranche : treve ou reddition.<br>' +
+      nA + ' : pertes ' + pA.perd + ' ' + pA.coef + ' | ' + nB + ' : pertes ' + pB.perd + ' ' + pB.coef + '</div></div>';
+  }
+
+  var vainqueur = (isDerouteImm ? aG : bR) ? nA : nB;
+  var perdant = vainqueur === nA ? nB : nA;
+  var capPerd = vainqueur === nA ? ST.capB : ST.capA;
+  var cohPerd = vainqueur === nA ? cohB : cohA;
+  var cohVainq = vainqueur === nA ? cohA : cohB;
+  var p = pertesLabel(capPerd, capMax, ST.round, cohPerd);
+  var pV = pertesLabel(capMax - capPerd, capMax, ST.round, cohVainq);
+
+  var typeVict = isDerouteImm ? 'Deroute immediate' : 'Deroute — Capital atteint';
+  var desc = isDerouteImm
+    ? 'L\'armee de ' + perdant + ' est en deroute totale (ecart ' + ecart + '). Elle est dispersee et a subi des pertes catastrophiques.'
+    : 'L\'armee de ' + perdant + ' a atteint son Capital de Rupture apres ' + ST.round + ' rounds. Elle est decimee.';
+
+  return '<div class="fin"><div class="fint">' + vainqueur + ' l\'emporte — ' + typeVict + '</div>' +
+    '<div class="fins">' + desc + '<br>' +
+    perdant + ' : pertes ' + p.perd + ' ' + p.coef + ' | ' + vainqueur + ' : pertes ' + pV.perd + ' ' + pV.coef + '</div></div>';
+}
+
+function buildFinMessage5(prefix, nA, nB, ST, ecartFinal, treveThresh, cohA, cohB) {
+  var capMax = Math.max(ST.capA, ST.capB);
+  // Treve si ecart trop faible
+  if (ecartFinal <= treveThresh) {
+    var p5A = pertesLabel(ST.pA, capMax, 5, cohA);
+    var p5B = pertesLabel(ST.pB, capMax, 5, cohB);
+    return '<div class="fin"><div class="fint" style="color:#b8a060">Treve — Resultat indecis</div>' +
+      '<div class="fins">Cinq rounds sans vainqueur clair (ecart ' + ecartFinal + ' pt' + (ecartFinal > 1 ? 's' : '') + ', seuil treve : ' + treveThresh + ' pt' + (treveThresh > 1 ? 's' : '') + '). Les deux armees se retirent sans victoire designee.<br>' +
+      nA + ' : ' + ST.pA + '/' + ST.capA + ' pts, pertes ' + p5A.perd + ' ' + p5A.coef +
+      ' | ' + nB + ' : ' + ST.pB + '/' + ST.capB + ' pts, pertes ' + p5B.perd + ' ' + p5B.coef + '</div></div>';
+  }
+  // Sinon defaite pour le camp avec le score le plus eleve
+  var aPerdu = ST.pA > ST.pB; // le plus de pts de rupture = le plus affaibli = le perdant
+  var vainqueur = aPerdu ? nB : nA;
+  var perdant = aPerdu ? nA : nB;
+  var ptsPerd = aPerdu ? ST.pA : ST.pB;
+  var ptsVainq = aPerdu ? ST.pB : ST.pA;
+  var capPerd = aPerdu ? ST.capA : ST.capB;
+  var capVainq = aPerdu ? ST.capB : ST.capA;
+  var cohPerd = aPerdu ? cohA : cohB;
+  var cohVainq = aPerdu ? cohB : cohA;
+  // Ampleur : ecart en % du capMax
+  var ampPct = capMax > 0 ? Math.round(ecartFinal / capMax * 100) : 0;
+  var ampleur = ampPct >= 50 ? 'nette' : ampPct >= 25 ? 'moderee' : 'etroite';
+  var pPerd = pertesLabel(ptsPerd, capMax, 5, cohPerd);
+  var pVainq = pertesLabel(ptsVainq, capMax, 5, cohVainq);
+  return '<div class="fin"><div class="fint">' + vainqueur + ' l\'emporte — Defaite ' + ampleur + '</div>' +
+    '<div class="fins">Apres 5 rounds, ' + perdant + ' a accumule plus de pression (' + ptsPerd + '/' + capPerd + ' pts) contre ' + ptsVainq + '/' + capVainq + ' pour ' + vainqueur + '.' +
+    ' L\'armee de ' + perdant + ' recule mais n\'est pas decimee.<br>' +
+    perdant + ' : pertes ' + pPerd.perd + ' ' + pPerd.coef + ' | ' + vainqueur + ' : pertes ' + pVainq.perd + ' ' + pVainq.coef + '</div></div>';
+}
+
+function resolveRound(prefix, nA, nB, d20A, d20B, sA, sB, mA, mB, engA, engB, stA, stB, stNomA, stNomB, cohA, cohB) {
+  var ST = prefix === 's' ? SS : CS;
+  var ecart = Math.abs(sA - sB);
+  var aG = sA > sB;
+  var eg = sA === sB;
+  var effModVainq = aG ? ST.em.mA : ST.em.mB;
+  var seuil = eg ? 10 : (aG ? seuilVainq(effModVainq) : seuilPerd(effModVainq));
+  var res = evalRound(ecart, seuil);
+  var mds = roundMods(ecart);
+  if (res.pts === 99) {
+    if (eg) { ST.pA = ST.capA; ST.pB = ST.capB; }
+    else if (aG) { ST.pB = ST.capB; }
+    else { ST.pA = ST.capA; }
+  } else if (!eg) {
+    if (aG) { ST.pB += res.pts; ST.mA = mds.v; ST.mB = mds.f; }
+    else { ST.pA += res.pts; ST.mB = mds.v; ST.mA = mds.f; }
+  } else { ST.mA = 0; ST.mB = 0; }
+  var simul = ST.pA >= ST.capA && ST.pB >= ST.capB;
+  var aR = !simul && ST.pA >= ST.capA;
+  var bR = !simul && ST.pB >= ST.capB;
+  var fin = res.pts === 99 || simul || aR || bR;
+  if (fin) ST.fin = true;
+  ST._derriere = res.pts === 99; // deroute immediate flag
+
+  // risques personnages
+  var allA = [].concat(engA);
+  document.querySelectorAll('#' + prefix + 'a-combs .combrow').forEach(function(r) {
+    if (!engA.find(function(e){return e.id===r.dataset.id;})) {
+      var s = parseInt(r.querySelector('select').value)||0;
+      if (s > 0) allA.push({score:s, nom:r.querySelector('input').value||'Combattant', ret:true});
+    }
+  });
+  var allB = [].concat(engB);
+  document.querySelectorAll('#' + prefix + 'b-combs .combrow').forEach(function(r) {
+    if (!engB.find(function(e){return e.id===r.dataset.id;})) {
+      var s = parseInt(r.querySelector('select').value)||0;
+      if (s > 0) allB.push({score:s, nom:r.querySelector('input').value||'Combattant', ret:true});
+    }
+  });
+  var rqA = ''; var rqB = '';
+  if (!aG && !eg) {
+    if (stA) rqA += '<div class="rqi">Stratege ' + (stNomA||'') + ' : ' + risqueLabel(ecart, false) + '</div>';
+    allA.forEach(function(c) { rqA += '<div class="rqi">' + c.nom + (c.ret?' (retrait)':' (engage)') + ' : ' + risqueLabel(ecart, !c.ret) + '</div>'; });
+  }
+  if (aG) {
+    if (stB) rqB += '<div class="rqi">Stratege ' + (stNomB||'') + ' : ' + risqueLabel(ecart, false) + '</div>';
+    allB.forEach(function(c) { rqB += '<div class="rqi">' + c.nom + (c.ret?' (retrait)':' (engage)') + ' : ' + risqueLabel(ecart, !c.ret) + '</div>'; });
+  }
+
+  var dcp = decompoHTML(nA, nB, mA, mB, d20A, d20B, sA, sB);
+  var svA = ST.em.mA >= ST.em.mB ? seuilVainq(ST.em.mA) : seuilPerd(ST.em.mB);
+  var svB = ST.em.mB >= ST.em.mA ? seuilVainq(ST.em.mB) : seuilPerd(ST.em.mA);
+  var nextMod = !fin ?
+    '<div class="mns">Round suivant -- ' + nA + ' : <span class="' + fc(ST.mA) + '">' + fv(ST.mA) + '</span> | ' + nB + ' : <span class="' + fc(ST.mB) + '">' + fv(ST.mB) + '</span>' +
+    '<br><span style="font-size:.72rem">Seuil deroute -- ' + nA + ' : &gt;=' + svA + ' | ' + nB + ' : &gt;=' + svB + '</span></div>' : '';
+  var cohNote = fin ?
+    '<div style="font-size:.75rem;color:#8899bb;text-align:center;margin-top:.4rem;font-style:italic">Coef. pertes -- ' + nA + ' : ' + cohLabel(cohA) + ' | ' + nB + ' : ' + cohLabel(cohB) + '</div>' : '';
+  var rqs = (rqA || rqB) ?
+    '<div class="rqs">' +
+    (rqA ? '<div class="rq"><div class="rqt" style="color:#7090c0">Risques ' + nA + '</div>' + rqA + '</div>' : '<div></div>') +
+    (rqB ? '<div class="rq"><div class="rqt" style="color:#c07070">Risques ' + nB + '</div>' + rqB + '</div>' : '') +
+    '</div>' : '';
+
+  document.getElementById(prefix + '-res').innerHTML =
+    '<div class="rr">' +
+    '<div class="re"><div class="en ' + res.cls + '">' + (eg ? '=' : ecart) + '</div><div class="el">' + (eg ? 'Egalite' : res.label + ' -- ' + (aG ? nA : nB)) + '</div></div>' +
+    dcp + rqs + nextMod + cohNote +
+    '</div>';
+  document.getElementById(prefix + '-res').style.display = 'block';
+
+  if (fin) {
+    var fb = buildFinMessage(prefix, nA, nB, aG, eg, ecart, res, simul, aR, bR, ST, cohA, cohB);
+    document.getElementById(prefix + '-fin').innerHTML = fb;
+    document.getElementById(prefix + '-fin').style.display = 'block';
+  }
+
+  var hList = document.getElementById(prefix + '-hi');
+  var hi = document.createElement('div');
+  hi.className = 'hi';
+  hi.innerHTML = '<span style="font-family:\'Cinzel\',serif;font-size:.65rem;color:#8899bb;text-transform:uppercase">R.' + ST.round + '</span>' +
+    '<span style="font-family:\'Cinzel\',serif;font-weight:600;color:#7090c0">' + nA + ': ' + sA + '</span>' +
+    '<span style="font-family:\'Cinzel\',serif;font-weight:600;color:#c07070">' + nB + ': ' + sB + '</span>' +
+    '<span style="font-family:\'Cinzel\',serif;font-weight:600;text-align:center" class="' + (eg?'gol':aG?'g':'r') + '">' + (eg ? '=' : (aG ? '+' : '-') + ecart) + '</span>' +
+    '<span style="font-size:.7rem;color:#8899bb">' + nA + ': ' + ST.pA + '/' + ST.capA + ' | ' + nB + ': ' + ST.pB + '/' + ST.capB + '</span>';
+  hList.insertBefore(hi, hList.firstChild);
+
+  document.getElementById(prefix + '-rb').innerHTML = rBarsHTML(nA, nB, ST.pA, ST.capA, ST.pB, ST.capB);
+
+  if (!fin) {
+    // Règle de retraite : si le round 5 vient de s'achever sans vainqueur, retraite mutuelle
+    if (ST.round >= 5) {
+      ST.fin = true;
+      var fbRetraite = '<div class="fin"><div class="fint" style="color:#b8a060">Retraite mutuelle</div>' +
+        '<div class="fins">Cinq rounds sans vainqueur — les deux armées battent en retraite. ' +
+        'Aucun camp ne peut revendiquer la victoire. ' +
+        'Pertes sévères des deux côtés (20–35 %). ' +
+        'La Cohésion Interne chute d\'un palier pour chaque camp.</div></div>';
+      document.getElementById(prefix + '-fin').innerHTML = fbRetraite;
+      document.getElementById(prefix + '-fin').style.display = 'block';
+    } else {
+      ST.round++;
+      document.getElementById(prefix + '-rn').textContent = ST.round;
+      document.getElementById(prefix + '-da').value = '';
+      document.getElementById(prefix + '-db').value = '';
+      updateEngBoxes(prefix, ST.used);
+    }
+  }
+}
+
+function sw(t) {
+  document.querySelectorAll('.tp').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tb').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tp-' + t).classList.add('active');
+  document.querySelectorAll('.tb')[t === 's' ? 0 : 1].classList.add('active');
+}
+</script>
+</body>
+</html>
