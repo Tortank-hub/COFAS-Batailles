@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>COFAS — Outil Bataille v13</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0c09;--bg3:#1e1a12;--bg4:#252118;
+  --parch:#E8DCC8;--gl:#D4AF37;--gl2:#F0CC55;--gold:#B8973A;
+  --red2:#e07070;--red3:#8B1A1A;--green2:#6dca8a;--blue2:#87CEEB;
+  --bdr:rgba(184,151,58,.35);--bdr2:rgba(184,151,58,.18);
+  --txt:#c8b98a;--txt2:#a89060;--txt3:#6a5830;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--txt);font-family:"Crimson Text",serif;min-height:100vh;}
+body::before{content:"";position:fixed;inset:0;background:
+  radial-gradient(ellipse at 20% 20%,rgba(139,100,0,.07) 0%,transparent 50%),
+  radial-gradient(ellipse at 80% 80%,rgba(80,50,0,.07) 0%,transparent 50%);
+pointer-events:none;z-index:0;}
+header{text-align:center;padding:1.2rem 1rem .8rem;background:linear-gradient(180deg,rgba(14,12,9,1),rgba(22,19,16,.95));border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:50;}
+header h1{font-family:"Cinzel",serif;font-size:1.35rem;font-weight:900;color:var(--gl);letter-spacing:.22em;text-transform:uppercase;text-shadow:0 0 30px rgba(212,175,55,.4);}
+header .sub{font-family:"Cinzel",serif;font-size:.56rem;color:var(--txt3);letter-spacing:.16em;text-transform:uppercase;margin-top:.2rem;}
+.dv{height:1px;background:linear-gradient(to right,transparent,var(--gold),var(--gl2),var(--gold),transparent);margin:.45rem auto 0;max-width:320px;}
+.nav-main{display:flex;justify-content:center;gap:2px;background:rgba(0,0,0,.4);border-bottom:2px solid var(--bdr);padding:.3rem .5rem 0;position:sticky;top:68px;z-index:49;}
+.nav-tab{font-family:"Cinzel",serif;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;padding:.5rem 1.3rem;cursor:pointer;color:var(--txt3);background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;}
+.nav-tab:hover{color:var(--gl);}
+.nav-tab.active{color:var(--gl);border-bottom-color:var(--gl);}
+.wrap{max-width:1100px;margin:0 auto;padding:1.2rem 1rem 4rem;position:relative;z-index:1;}
+.view{display:none;}.view.active{display:block;}
+.panel{background:linear-gradient(145deg,var(--bg3),var(--bg4));border:1px solid var(--bdr);border-radius:3px;padding:.9rem 1rem;margin-bottom:.7rem;position:relative;}
+.panel::before{content:"";position:absolute;inset:3px;border:1px solid var(--bdr2);border-radius:2px;pointer-events:none;}
+.panel-title{font-family:"Cinzel",serif;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--gl);margin-bottom:.65rem;padding-bottom:.32rem;border-bottom:1px solid var(--bdr2);}
+
+/* ARMÉE SLOTS */
+.battle-arena{display:grid;grid-template-columns:1fr 44px 1fr;gap:.7rem;align-items:start;margin-bottom:.7rem;}
+@media(max-width:700px){.battle-arena{grid-template-columns:1fr;}}
+.slot{background:linear-gradient(145deg,var(--bg3),var(--bg4));border:1px solid var(--bdr2);border-radius:3px;padding:.9rem 1rem;position:relative;}
+.slot::before{content:"";position:absolute;inset:3px;border:1px solid var(--bdr2);border-radius:2px;pointer-events:none;}
+.slot-a{border-color:rgba(192,57,43,.4);}
+.slot-b{border-color:rgba(36,113,163,.4);}
+.slot-lbl{font-family:"Cinzel",serif;font-size:.54rem;font-weight:700;text-transform:uppercase;letter-spacing:.11em;padding:.13rem .4rem;border-radius:2px;display:inline-block;margin-bottom:.5rem;}
+.slot-a .slot-lbl{color:#e07070;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.28);}
+.slot-b .slot-lbl{color:#87CEEB;background:rgba(36,113,163,.1);border:1px solid rgba(36,113,163,.28);}
+.vs-sep{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.3rem 0;}
+.vs-txt{font-family:"Cinzel",serif;font-size:1.4rem;font-weight:900;color:var(--gl);text-shadow:0 0 18px rgba(212,175,55,.4);}
+.vs-line{width:1px;flex:1;background:linear-gradient(to bottom,transparent,var(--bdr),transparent);}
+
+/* INPUTS */
+.fl{font-family:"Cinzel",serif;font-size:.56rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);display:block;margin-bottom:.22rem;}
+input[type=text],input[type=number],select,textarea{width:100%;background:#1a1814;border:1px solid rgba(184,151,58,.28);border-radius:2px;padding:.28rem .45rem;font-family:"Crimson Text",serif;font-size:.88rem;color:var(--txt);outline:none;color-scheme:dark;}
+input:focus,select:focus{border-color:var(--gl);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.45rem;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;margin-bottom:.4rem;}
+
+/* STAT ROWS */
+.stat-row{display:grid;grid-template-columns:1fr 55px 44px;gap:.3rem;align-items:center;background:rgba(0,0,0,.22);border-radius:2px;padding:.22rem .4rem;margin-bottom:.18rem;}
+.stat-name{font-family:"Cinzel",serif;font-size:.6rem;color:var(--txt2);}
+.stat-mod{font-family:"Cinzel",serif;font-size:.68rem;font-weight:700;text-align:center;}
+.section-title{font-family:"Cinzel",serif;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gl);margin:.6rem 0 .35rem;padding-bottom:.22rem;border-bottom:1px solid var(--bdr2);}
+
+/* CAPITAL DISPLAY */
+.capital-box{background:rgba(0,0,0,.28);border:1px solid var(--bdr);border-radius:2px;padding:.55rem .75rem;text-align:center;margin:.35rem 0;}
+.cap-lbl{font-family:"Cinzel",serif;font-size:.5rem;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3);}
+.cap-val{font-family:"Cinzel",serif;font-size:1.8rem;font-weight:900;color:var(--parch);line-height:1.1;}
+.cap-sub{font-size:.72rem;color:var(--txt3);font-style:italic;margin-top:.15rem;}
+
+/* EFFECTIF */
+.eff-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin:.35rem 0;}
+.eff-box{background:rgba(0,0,0,.2);border-radius:2px;padding:.3rem .45rem;text-align:center;}
+.eff-lbl{font-family:"Cinzel",serif;font-size:.44rem;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);}
+.eff-val{font-family:"Cinzel",serif;font-size:.85rem;font-weight:700;color:var(--gl);}
+
+/* STEP BANNERS */
+.step-banner{display:flex;align-items:center;gap:.55rem;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:3px;padding:.42rem .75rem;margin-bottom:.55rem;font-family:"Cinzel",serif;font-size:.6rem;color:var(--gl);letter-spacing:.08em;}
+.step-banner .step-num{background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.35);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.step-banner.done{background:rgba(45,122,62,.06);border-color:rgba(45,122,62,.25);color:var(--green2);}
+.step-banner.done .step-num{background:rgba(45,122,62,.15);border-color:rgba(45,122,62,.35);}
+.step-banner.waiting{background:rgba(0,0,0,.15);border-color:var(--bdr2);color:var(--txt3);}
+.step-banner.waiting .step-num{background:rgba(0,0,0,.2);border-color:var(--bdr2);}
+.step-banner.cond{background:rgba(192,57,43,.06);border-color:rgba(192,57,43,.2);color:#e07070;}
+.step-banner.cond .step-num{background:rgba(192,57,43,.12);border-color:rgba(192,57,43,.3);}
+
+/* JETS */
+.phase-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+@media(max-width:600px){.phase-grid{grid-template-columns:1fr;}}
+.jb{background:rgba(0,0,0,.2);border:1px solid var(--bdr2);border-radius:2px;padding:.5rem .6rem;margin-bottom:.0rem;}
+.jb-a .jbn{color:#e07070;}.jb-b .jbn{color:#87CEEB;}
+.jb.winner{border-color:rgba(212,175,55,.5);box-shadow:0 0 14px rgba(212,175,55,.12);}
+.jbn{font-family:"Cinzel",serif;font-size:.54rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;margin-bottom:.25rem;}
+.jf{font-size:.65rem;color:var(--txt3);margin-bottom:.28rem;font-style:italic;line-height:1.4;}
+.die-wrap{display:flex;align-items:center;gap:.32rem;flex-wrap:wrap;}
+.jlbl{font-family:"Cinzel",serif;font-size:.56rem;color:var(--txt3);}
+.jinp{width:50px;background:rgba(0,0,0,.32);border:1px solid rgba(212,175,55,.28);border-radius:2px;padding:.2rem .25rem;font-family:"Cinzel",serif;font-size:.92rem;font-weight:700;color:var(--gl);text-align:center;outline:none;}
+.jinp:focus{border-color:var(--gl);}
+.jplus{color:var(--txt3);font-size:.72rem;}
+.jmod{font-family:"Cinzel",serif;font-size:.8rem;font-weight:700;}
+.jtw{margin-left:auto;text-align:right;}
+.jtl{font-family:"Cinzel",serif;font-size:.44rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;}
+.jt{font-family:"Cinzel",serif;font-size:1.1rem;font-weight:900;color:var(--parch);}
+.mod-pos{color:var(--green2);}.mod-neg{color:var(--red2);}.mod-zer{color:var(--txt3);}
+.die-btn{background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.3);border-radius:3px;color:var(--gl);cursor:pointer;font-size:1rem;padding:.1rem .32rem;line-height:1;transition:all .15s;user-select:none;}
+.die-btn:hover{background:rgba(212,175,55,.2);border-color:var(--gl);transform:rotate(-15deg) scale(1.15);}
+@keyframes dieRoll{0%{transform:rotate(0) scale(1)}40%{transform:rotate(-25deg) scale(1.2)}70%{transform:rotate(15deg) scale(1.1)}100%{transform:rotate(0) scale(1)}}
+.die-btn.rolling{animation:dieRoll .25s ease;}
+
+/* RÉSULTATS */
+.res-box{background:rgba(0,0,0,.28);border:1px solid var(--bdr);border-radius:2px;padding:.55rem .75rem;margin:.5rem 0;text-align:center;}
+.res-win{font-family:"Cinzel",serif;font-size:.85rem;font-weight:700;margin-bottom:.12rem;}
+.res-sub{font-family:"Cinzel",serif;font-size:.62rem;color:var(--txt2);}
+.res-pd{font-family:"Cinzel",serif;font-size:1.1rem;font-weight:900;}
+.pd-bad{color:var(--red2);}.pd-warn{color:#e0a030;}.pd-ok{color:var(--green2);}
+
+/* PD BARS */
+.pd-section{background:rgba(0,0,0,.18);border:1px solid var(--bdr2);border-radius:2px;padding:.5rem .65rem;margin-bottom:.45rem;}
+.pd-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem;}
+.pd-lbl{font-family:"Cinzel",serif;font-size:.52rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);}
+.pd-val{font-family:"Cinzel",serif;font-size:.85rem;font-weight:700;}
+.pd-bar-wrap{height:8px;background:rgba(0,0,0,.38);border-radius:2px;border:1px solid var(--bdr2);overflow:hidden;}
+.pd-bar{height:100%;border-radius:2px;transition:width .4s,background .3s;}
+.pd-bar-a{background:linear-gradient(90deg,#8B1A1A,#e07070);}
+.pd-bar-b{background:linear-gradient(90deg,#1a4a7a,#87CEEB);}
+.sbadge{font-family:"Cinzel",serif;font-size:.54rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:.1rem .38rem;border-radius:2px;display:inline-block;margin-top:.22rem;}
+.st-ok{color:var(--green2);background:rgba(45,122,62,.1);border:1px solid rgba(45,122,62,.28);}
+.st-warn{color:#e0a030;background:rgba(224,160,48,.1);border:1px solid rgba(224,160,48,.28);}
+.st-crit{color:var(--red2);background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.28);}
+.st-dead{color:#aaa;background:rgba(0,0,0,.28);border:1px solid #444;letter-spacing:.06em;}
+
+/* BUTTONS */
+.btn{font-family:"Cinzel",serif;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:.35rem .85rem;border-radius:2px;cursor:pointer;border:1px solid var(--bdr2);background:transparent;color:var(--txt2);transition:all .18s;}
+.btn:hover{border-color:var(--bdr);color:var(--txt);}
+.btn-pri{border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.08);color:var(--gl);}
+.btn-pri:hover{background:rgba(212,175,55,.18);}
+.btn-pri:disabled{opacity:.35;cursor:not-allowed;}
+.btn-dan{border-color:rgba(192,57,43,.38);background:rgba(192,57,43,.06);color:var(--red2);}
+
+/* LOG */
+.log-wrap{background:rgba(0,0,0,.25);border:1px solid var(--bdr2);border-radius:2px;max-height:320px;overflow-y:auto;padding:.45rem .6rem;}
+.log-entry{padding:.3rem 0;border-bottom:1px solid rgba(184,151,58,.06);font-size:.78rem;line-height:1.5;}
+.log-entry:last-child{border-bottom:none;}
+.log-round-hdr{font-family:"Cinzel",serif;font-size:.65rem;font-weight:700;color:var(--gl);text-transform:uppercase;letter-spacing:.09em;padding:.32rem .45rem;background:rgba(212,175,55,.05);border-bottom:1px solid var(--bdr2);margin-bottom:.2rem;}
+.log-a{color:#e07070;}.log-b{color:#87CEEB;}.log-bold{color:var(--parch);font-weight:600;}
+.log-deroute{font-family:"Cinzel",serif;font-size:.72rem;font-weight:700;text-transform:uppercase;padding:.35rem;text-align:center;border-radius:2px;margin:.25rem 0;}
+.log-deroute-a{color:#e07070;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.28);}
+.log-deroute-b{color:#87CEEB;background:rgba(36,113,163,.1);border:1px solid rgba(36,113,163,.28);}
+.log-empty{color:var(--txt3);font-style:italic;font-size:.78rem;text-align:center;padding:.7rem 0;}
+
+/* PERTES */
+.pertes-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+.pertes-box{background:rgba(0,0,0,.2);border:1px solid var(--bdr2);border-radius:2px;padding:.6rem .75rem;text-align:center;}
+.p-titre{font-family:"Cinzel",serif;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;margin-bottom:.35rem;}
+.p-taux{font-family:"Cinzel",serif;font-size:2rem;font-weight:900;line-height:1;}
+.p-hommes{font-size:.75rem;color:var(--txt3);font-style:italic;margin-top:.15rem;}
+.p-detail{font-size:.68rem;color:var(--txt2);margin-top:.3rem;line-height:1.6;}
+
+/* TABLES REF */
+.ref-table{width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:.5rem;}
+.ref-table th{background:rgba(0,0,0,.35);color:var(--gl);font-family:"Cinzel",serif;font-size:.52rem;text-transform:uppercase;letter-spacing:.07em;padding:.3rem .5rem;text-align:center;border:1px solid var(--bdr2);}
+.ref-table td{padding:.28rem .5rem;text-align:center;border:1px solid var(--bdr2);color:var(--txt2);}
+.ref-table tr:nth-child(even) td{background:rgba(0,0,0,.15);}
+.ref-table .td-good{color:var(--green2);font-weight:700;}
+.ref-table .td-bad{color:var(--red2);font-weight:700;}
+.ref-table .td-warn{color:#e0a030;font-weight:700;}
+
+/* THEME */
+#theme-toggle{position:fixed;top:.5rem;right:.75rem;z-index:300;font-family:"Cinzel",serif;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:.35rem .85rem;border-radius:2px;cursor:pointer;border:1px solid var(--bdr);background:rgba(0,0,0,.35);color:var(--txt2);transition:all .2s;}
+#theme-toggle:hover{color:var(--gl);}
+
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:rgba(0,0,0,.18);}
+::-webkit-scrollbar-thumb{background:rgba(184,151,58,.28);border-radius:2px;}
+
+/* LIGHT MODE */
+html.light{--bg:#f5f0e8;--bg3:#ede6d8;--bg4:#e6deca;--parch:#2a1f0e;--gl:#8B6914;--gl2:#A07820;--gold:#7a5a10;--red2:#b03030;--red3:#7a1a1a;--green2:#2d7a42;--blue2:#1a5a8a;--bdr:rgba(100,70,20,.35);--bdr2:rgba(100,70,20,.18);--txt:#3a2a10;--txt2:#6a4820;--txt3:#9a7840;}
+html.light body{background:var(--bg);}
+html.light header{background:linear-gradient(180deg,rgba(240,232,210,1),rgba(230,220,195,.97));}
+html.light .nav-main{background:rgba(255,255,255,.5);}
+html.light select,html.light input[type=number],html.light input[type=text]{background:#ede6d8;color-scheme:light;}
+html.light .panel,html.light .slot{background:linear-gradient(145deg,var(--bg3),var(--bg4));}
+html.light .jb{background:rgba(255,255,255,.25);}
+html.light .jinp{background:rgba(255,255,255,.6);}
+html.light .die-btn{background:rgba(180,130,30,.1);border-color:rgba(180,130,30,.35);}
+html.light .log-wrap{background:rgba(255,255,255,.4);}
+html.light .res-box{background:rgba(255,255,255,.35);}
+html.light .pd-section{background:rgba(255,255,255,.35);}
+html.light .capital-box{background:rgba(255,255,255,.4);}
+html.light .stat-row{background:rgba(255,255,255,.3);}
+html.light .eff-box{background:rgba(255,255,255,.3);}
+html.light .pertes-box{background:rgba(255,255,255,.3);}
+html.light .pd-bar-wrap{background:rgba(0,0,0,.1);}
+html.light .ref-table td{color:var(--txt2);}
+html.light .ref-table th{background:rgba(0,0,0,.1);}
+html.light #theme-toggle{background:rgba(255,255,255,.6);border-color:rgba(100,70,20,.35);}
+html.light .log-a{color:#b03030;}html.light .log-b{color:#1a5a8a;}
+html.light .step-banner{background:rgba(180,130,30,.08);border-color:rgba(180,130,30,.25);}
+html.light .step-banner.done{background:rgba(30,100,50,.07);border-color:rgba(30,100,50,.25);}
+html.light .step-banner.waiting{background:rgba(0,0,0,.04);border-color:rgba(100,70,20,.15);}
+html.light .step-banner.cond{background:rgba(180,30,30,.06);border-color:rgba(180,30,30,.2);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚔ Bataille</h1>
+  <div class="sub">Combat de Masse — COFAS v13</div>
+  <div class="dv"></div>
+</header>
+
+<nav class="nav-main">
+  <button class="nav-tab active" onclick="showView('setup',this)">🏰 Armées</button>
+  <button class="nav-tab" onclick="showView('combat',this)">⚔ Combat</button>
+  <button class="nav-tab" onclick="showView('pertes',this)">💀 Pertes</button>
+  <button class="nav-tab" onclick="showView('ref',this)">📜 Références</button>
+</nav>
+
+<div class="wrap">
+
+<!-- ══════════════════════════════════════════════════════
+     VUE SETUP — Configuration des armées
+══════════════════════════════════════════════════════ -->
+<div class="view active" id="view-setup">
+
+  <!-- PD en cours -->
+  <div class="panel" id="pd-overview" style="display:none">
+    <div class="panel-title">📊 État de la Bataille — Tour <span id="tour-lbl">1</span> / 5</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+      <div class="pd-section">
+        <div class="pd-hdr"><span class="pd-lbl" id="pd-na">Armée A</span><span class="pd-val" id="pd-va" style="color:#e07070">0 / 0 PD</span></div>
+        <div class="pd-bar-wrap"><div class="pd-bar pd-bar-a" id="pd-ba" style="width:0%"></div></div>
+        <span class="sbadge st-ok" id="pd-st-a">En ordre</span>
+      </div>
+      <div class="pd-section">
+        <div class="pd-hdr"><span class="pd-lbl" id="pd-nb">Armée B</span><span class="pd-val" id="pd-vb" style="color:#87CEEB">0 / 0 PD</span></div>
+        <div class="pd-bar-wrap"><div class="pd-bar pd-bar-b" id="pd-bb" style="width:0%"></div></div>
+        <span class="sbadge st-ok" id="pd-st-b">En ordre</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="battle-arena">
+    <!-- SLOT A -->
+    <div class="slot slot-a">
+      <div class="slot-lbl">Armée A</div>
+      <div class="g2">
+        <div><label class="fl">Nom de la maison / coalition</label><input type="text" id="a-nom" value="Maison Stark" oninput="calcCapital('a')"></div>
+        <div><label class="fl">Mil.Terrestre total (1–10+)</label><input type="number" id="a-mil" min="1" max="20" value="8" oninput="calcCapital('a');calcNum()"></div>
+      </div>
+      <div class="g2">
+        <div><label class="fl">Effectifs déclarés <span id="a-eff-hint" style="color:var(--txt3);font-style:italic;font-size:.9em">— auto</span></label><input type="number" id="a-eff" min="0" value="18500" oninput="calcNum();document.getElementById('a-eff-hint').textContent='— modifié';document.getElementById('a-eff-hint').style.color='var(--gl2)'"></div>
+        <div><label class="fl">Bonus contextuels MJ</label><input type="number" id="a-ctx" min="-10" max="10" value="0" oninput="calcCapital('a')"></div>
+      </div>
+
+      <div class="section-title">🧠 Stratège</div>
+      <div class="g3">
+        <div><label class="fl">Valeur (1–10)</label><input type="number" id="a-str-val" min="1" max="10" value="7" oninput="calcCapital('a')"></div>
+        <div><label class="fl">Atouts</label><input type="number" id="a-str-ato" min="0" max="3" value="1" oninput="calcCapital('a')"></div>
+        <div><label class="fl">Bonus/Malus</label><input type="number" id="a-str-bns" min="-5" max="5" value="0" oninput="calcCapital('a')"></div>
+      </div>
+
+      <div class="section-title">🗡 Combattant &amp; Commandant</div>
+      <div class="stat-row"><span class="stat-name">Commandant (valeur)</span><input type="number" id="a-cmd-val" min="1" max="10" value="8" style="width:52px" oninput="updModDisplay()"><span class="stat-mod mod-zer" id="a-cmd-mod">0</span></div>
+      <div class="stat-row"><span class="stat-name">Atouts Commandant</span><input type="number" id="a-cmd-ato" min="0" max="3" value="0" style="width:52px" oninput="updModDisplay()"><span class="stat-mod" style="color:var(--txt3);font-size:.6rem">×+2</span></div>
+      <div class="stat-row"><span class="stat-name">Combattant (valeur)</span><input type="number" id="a-cbt-val" min="1" max="10" value="7" style="width:52px" oninput="updModDisplay()"><span class="stat-mod mod-zer" id="a-cbt-mod">0</span></div>
+      <div class="stat-row"><span class="stat-name">Atouts Combattant</span><input type="number" id="a-cbt-ato" min="0" max="3" value="0" style="width:52px" oninput="updModDisplay()"><span class="stat-mod" style="color:var(--txt3);font-size:.6rem">×+2</span></div>
+
+      <div class="capital-box">
+        <div class="cap-lbl">Capital de Déroute</div>
+        <div class="cap-val" id="a-capital">—</div>
+        <div class="cap-sub" id="a-capital-detail">—</div>
+      </div>
+      <div class="eff-grid">
+        <div class="eff-box"><div class="eff-lbl">Mod. Stratège</div><div class="eff-val" id="a-str-mod-disp">—</div></div>
+        <div class="eff-box"><div class="eff-lbl">Total jet conf.</div><div class="eff-val" id="a-conf-mod">—</div></div>
+      </div>
+    </div>
+
+    <div class="vs-sep"><div class="vs-line"></div><div class="vs-txt">VS</div><div class="vs-line"></div></div>
+
+    <!-- SLOT B -->
+    <div class="slot slot-b">
+      <div class="slot-lbl">Armée B</div>
+      <div class="g2">
+        <div><label class="fl">Nom de la maison / coalition</label><input type="text" id="b-nom" value="Maison Karstark" oninput="calcCapital('b')"></div>
+        <div><label class="fl">Mil.Terrestre total (1–10+)</label><input type="number" id="b-mil" min="1" max="20" value="3" oninput="calcCapital('b');calcNum()"></div>
+      </div>
+      <div class="g2">
+        <div><label class="fl">Effectifs déclarés <span id="b-eff-hint" style="color:var(--txt3);font-style:italic;font-size:.9em">— auto</span></label><input type="number" id="b-eff" min="0" value="2750" oninput="calcNum();document.getElementById('b-eff-hint').textContent='— modifié';document.getElementById('b-eff-hint').style.color='var(--gl2)'"></div>
+        <div><label class="fl">Bonus contextuels MJ</label><input type="number" id="b-ctx" min="-10" max="10" value="0" oninput="calcCapital('b')"></div>
+      </div>
+
+      <div class="section-title">🧠 Stratège</div>
+      <div class="g3">
+        <div><label class="fl">Valeur (1–10)</label><input type="number" id="b-str-val" min="1" max="10" value="5" oninput="calcCapital('b')"></div>
+        <div><label class="fl">Atouts</label><input type="number" id="b-str-ato" min="0" max="3" value="0" oninput="calcCapital('b')"></div>
+        <div><label class="fl">Bonus/Malus</label><input type="number" id="b-str-bns" min="-5" max="5" value="0" oninput="calcCapital('b')"></div>
+      </div>
+
+      <div class="section-title">🗡 Combattant &amp; Commandant</div>
+      <div class="stat-row"><span class="stat-name">Commandant (valeur)</span><input type="number" id="b-cmd-val" min="1" max="10" value="4" style="width:52px" oninput="updModDisplay()"><span class="stat-mod mod-zer" id="b-cmd-mod">0</span></div>
+      <div class="stat-row"><span class="stat-name">Atouts Commandant</span><input type="number" id="b-cmd-ato" min="0" max="3" value="0" style="width:52px" oninput="updModDisplay()"><span class="stat-mod" style="color:var(--txt3);font-size:.6rem">×+2</span></div>
+      <div class="stat-row"><span class="stat-name">Combattant (valeur)</span><input type="number" id="b-cbt-val" min="1" max="10" value="5" style="width:52px" oninput="updModDisplay()"><span class="stat-mod mod-zer" id="b-cbt-mod">0</span></div>
+      <div class="stat-row"><span class="stat-name">Atouts Combattant</span><input type="number" id="b-cbt-ato" min="0" max="3" value="0" style="width:52px" oninput="updModDisplay()"><span class="stat-mod" style="color:var(--txt3);font-size:.6rem">×+2</span></div>
+
+      <div class="capital-box">
+        <div class="cap-lbl">Capital de Déroute</div>
+        <div class="cap-val" id="b-capital">—</div>
+        <div class="cap-sub" id="b-capital-detail">—</div>
+      </div>
+      <div class="eff-grid">
+        <div class="eff-box"><div class="eff-lbl">Mod. Stratège</div><div class="eff-val" id="b-str-mod-disp">—</div></div>
+        <div class="eff-box"><div class="eff-lbl">Total jet conf.</div><div class="eff-val" id="b-conf-mod">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mod numérique -->
+  <div class="panel">
+    <div class="panel-title">⚖ Modificateur Numérique</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;align-items:center">
+      <div style="text-align:center">
+        <div style="font-family:Cinzel,serif;font-size:.52rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Effectif supérieur</div>
+        <div style="font-family:Cinzel,serif;font-size:1rem;font-weight:700;color:var(--parch)" id="num-sup">—</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:Cinzel,serif;font-size:.52rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Écart</div>
+        <div style="font-family:Cinzel,serif;font-size:.85rem;font-weight:700;color:var(--txt2)" id="num-ecart">—</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:Cinzel,serif;font-size:.52rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem">Mod. Numérique</div>
+        <div style="font-family:Cinzel,serif;font-size:1.6rem;font-weight:900;color:var(--green2)" id="num-mod">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:.5rem;justify-content:center;margin-top:.5rem">
+    <button class="btn btn-pri" onclick="lancerBataille()">⚔ Lancer la bataille</button>
+    <button class="btn btn-dan" onclick="resetAll()">↺ Réinitialiser</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VUE COMBAT
+══════════════════════════════════════════════════════ -->
+<div class="view" id="view-combat">
+
+  <!-- Barre PD sticky -->
+  <div class="panel">
+    <div class="panel-title">Tour <span id="tour-combat-lbl">1</span> / 5 &nbsp;·&nbsp; <span id="battle-status" style="color:var(--gl)">En cours</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
+      <div class="pd-section">
+        <div class="pd-hdr"><span class="pd-lbl" id="c-pd-na">Armée A</span><span class="pd-val" id="c-pd-va" style="color:#e07070">0 / 0 PD</span></div>
+        <div class="pd-bar-wrap"><div class="pd-bar pd-bar-a" id="c-pd-ba" style="width:0%"></div></div>
+        <span class="sbadge st-ok" id="c-pd-st-a">En ordre</span>
+      </div>
+      <div class="pd-section">
+        <div class="pd-hdr"><span class="pd-lbl" id="c-pd-nb">Armée B</span><span class="pd-val" id="c-pd-vb" style="color:#87CEEB">0 / 0 PD</span></div>
+        <div class="pd-bar-wrap"><div class="pd-bar pd-bar-b" id="c-pd-bb" style="width:0%"></div></div>
+        <span class="sbadge st-ok" id="c-pd-st-b">En ordre</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE I -->
+  <div class="panel">
+    <div class="panel-title">🧠 Phase I — Stratégie</div>
+    <div class="step-banner" id="step1-banner"><span class="step-num">1</span>Lancez les dés de Stratégie pour les deux armées</div>
+    <div class="jf" style="margin-bottom:.5rem">Formule : D20 + Mod.Stratège + (Atouts × +2) + Bonus/Malus</div>
+    <div class="phase-grid">
+      <div class="jb jb-a" id="jb-str-a">
+        <div class="jbn" id="str-na">Armée A</div>
+        <div class="jf" id="str-fa">—</div>
+        <div class="die-wrap">
+          <span class="jlbl">D20</span>
+          <input class="jinp" id="str-da" type="number" min="1" max="20" oninput="calcStrat()">
+          <button class="die-btn" onclick="rollD('str-da',20,calcStrat)">🎲</button>
+          <span class="jplus">+</span><span class="jmod mod-zer" id="str-ma">0</span>
+          <div class="jtw"><div class="jtl">Total</div><div class="jt" id="str-ta">—</div></div>
+        </div>
+      </div>
+      <div class="jb jb-b" id="jb-str-b">
+        <div class="jbn" id="str-nb">Armée B</div>
+        <div class="jf" id="str-fb">—</div>
+        <div class="die-wrap">
+          <span class="jlbl">D20</span>
+          <input class="jinp" id="str-db" type="number" min="1" max="20" oninput="calcStrat()">
+          <button class="die-btn" onclick="rollD('str-db',20,calcStrat)">🎲</button>
+          <span class="jplus">+</span><span class="jmod mod-zer" id="str-mb">0</span>
+          <div class="jtw"><div class="jtl">Total</div><div class="jt" id="str-tb">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="res-box" id="str-res" style="display:none">
+      <div class="res-win" id="str-win"></div>
+      <div class="res-sub" id="str-sub"></div>
+    </div>
+  </div>
+
+  <!-- PHASE II -->
+  <div class="panel">
+    <div class="panel-title">⚔ Phase II — Confrontation</div>
+    <div class="step-banner waiting" id="step2-banner"><span class="step-num">2</span>Résolvez la Phase I d'abord</div>
+    <div class="jf" style="margin-bottom:.5rem">Formule : D20 + Bonus Strat. + Mod.Cmd + (Atu.Cmd × +2) + Mod.Cbt + (Atu.Cbt × +2) + Mod.Numérique</div>
+    <div class="phase-grid">
+      <div class="jb jb-a" id="jb-conf-a">
+        <div class="jbn" id="conf-na">Armée A</div>
+        <div class="jf" id="conf-fa">—</div>
+        <div class="die-wrap">
+          <span class="jlbl">D20</span>
+          <input class="jinp" id="conf-da" type="number" min="1" max="20" oninput="calcConf()">
+          <button class="die-btn" onclick="rollD('conf-da',20,calcConf)">🎲</button>
+          <span class="jplus">+</span><span class="jmod mod-zer" id="conf-ma">0</span>
+          <div class="jtw"><div class="jtl">Total</div><div class="jt" id="conf-ta">—</div></div>
+        </div>
+      </div>
+      <div class="jb jb-b" id="jb-conf-b">
+        <div class="jbn" id="conf-nb">Armée B</div>
+        <div class="jf" id="conf-fb">—</div>
+        <div class="die-wrap">
+          <span class="jlbl">D20</span>
+          <input class="jinp" id="conf-db" type="number" min="1" max="20" oninput="calcConf()">
+          <button class="die-btn" onclick="rollD('conf-db',20,calcConf)">🎲</button>
+          <span class="jplus">+</span><span class="jmod mod-zer" id="conf-mb">0</span>
+          <div class="jtw"><div class="jtl">Total</div><div class="jt" id="conf-tb">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="res-box" id="conf-res" style="display:none">
+      <div class="res-win" id="conf-win"></div>
+      <div class="res-sub" id="conf-sub"></div>
+      <div style="margin-top:.35rem" id="conf-pd-line"></div>
+    </div>
+  </div>
+
+  <!-- PHASE III -->
+  <div class="panel">
+    <div class="panel-title">🏃 Phase III — Poursuite <span style="font-family:Crimson Text,serif;font-weight:400;font-size:.8rem;color:var(--txt3)">(conditionnelle — écart Ph.II ≥ 6)</span></div>
+    <div class="step-banner waiting" id="step3-banner"><span class="step-num">3</span>Déclenchée uniquement si écart de confrontation ≥ 6</div>
+    <div id="phase3-content" style="display:none">
+      <div class="jf" style="margin-bottom:.5rem" id="p3-formule">Attaquant : D20 + Mod.Cbt + (Atu.Cbt × +2) + Bonus Poursuite</div>
+      <div class="phase-grid">
+        <div class="jb jb-a" id="jb-purs-att">
+          <div class="jbn" id="purs-n-att">Attaquant</div>
+          <div class="jf" id="purs-f-att">D20 + Mod.Cbt + Bonus Poursuite</div>
+          <div class="die-wrap">
+            <span class="jlbl">D20</span>
+            <input class="jinp" id="purs-d-att" type="number" min="1" max="20" oninput="calcPurs()">
+            <button class="die-btn" onclick="rollD('purs-d-att',20,calcPurs)">🎲</button>
+            <span class="jplus">+</span><span class="jmod" id="purs-m-att">0</span>
+            <div class="jtw"><div class="jtl">Total</div><div class="jt" id="purs-t-att">—</div></div>
+          </div>
+        </div>
+        <div class="jb jb-b" id="jb-purs-def">
+          <div class="jbn" id="purs-n-def">Défenseur</div>
+          <div class="jf">D20 + Mod.Cbt + (Atu.Cbt × +2)</div>
+          <div class="die-wrap">
+            <span class="jlbl">D20</span>
+            <input class="jinp" id="purs-d-def" type="number" min="1" max="20" oninput="calcPurs()">
+            <button class="die-btn" onclick="rollD('purs-d-def',20,calcPurs)">🎲</button>
+            <span class="jplus">+</span><span class="jmod" id="purs-m-def">0</span>
+            <div class="jtw"><div class="jtl">Total</div><div class="jt" id="purs-t-def">—</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="res-box" id="purs-res" style="display:none">
+        <div class="res-win" id="purs-win"></div>
+        <div class="res-sub" id="purs-sub"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:.5rem;justify-content:center;align-items:center;margin:.6rem 0;flex-wrap:wrap">
+    <button class="btn btn-pri" id="next-tour-btn" onclick="validerTour()" disabled>Valider le tour ➜</button>
+    <button class="btn" onclick="resetTour()">↺ Refaire ce tour</button>
+  </div>
+
+  <!-- LOG -->
+  <div class="panel">
+    <div class="panel-title">📖 Journal de Bataille</div>
+    <div class="log-wrap" id="log-wrap"><div class="log-empty">Aucun tour validé.</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VUE PERTES
+══════════════════════════════════════════════════════ -->
+<div class="view" id="view-pertes">
+  <div class="panel">
+    <div class="panel-title">💀 Calcul des Pertes après Bataille</div>
+    <div style="font-size:.82rem;color:var(--txt2);margin-bottom:.9rem;font-style:italic">
+      À calculer après la déroute d'une armée ou à la fin des 5 tours.
+    </div>
+
+    <div class="g2" style="margin-bottom:.7rem">
+      <div>
+        <label class="fl">Armée vaincue</label>
+        <select id="p-perdant" onchange="calcPertes()">
+          <option value="a">Armée A</option>
+          <option value="b">Armée B</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Tour de déroute (1–5, ou 5 si limite)</label>
+        <input type="number" id="p-tour" min="1" max="5" value="2" oninput="calcPertes()">
+      </div>
+    </div>
+
+    <div class="g3" style="margin-bottom:.5rem">
+      <div><label class="fl">PD accumulés (perdant)</label><input type="number" id="p-pd" min="0" value="6" oninput="calcPertes()"></div>
+      <div><label class="fl">Capital (perdant)</label><input type="number" id="p-cap" min="1" value="6" oninput="calcPertes()"></div>
+      <div><label class="fl">Effectifs (perdant)</label><input type="number" id="p-eff" min="0" value="2750" oninput="calcPertes()"></div>
+    </div>
+
+    <div class="g2" style="margin-bottom:.7rem">
+      <div><label class="fl">Commandant perdant (valeur 1–10)</label><input type="number" id="p-cmd-p" min="1" max="10" value="4" oninput="calcPertes()"></div>
+      <div><label class="fl">Commandant vainqueur (valeur 1–10)</label><input type="number" id="p-cmd-v" min="1" max="10" value="8" oninput="calcPertes()"></div>
+    </div>
+
+    <div class="pertes-grid" id="pertes-result" style="display:none">
+      <div class="pertes-box" style="border-top:3px solid var(--red2)">
+        <div class="p-titre" style="color:var(--red2)" id="p-titre-perdant">Armée vaincue</div>
+        <div class="p-taux" style="color:var(--red2)" id="p-taux">—</div>
+        <div class="p-hommes" id="p-hommes">— hommes perdus</div>
+        <div class="p-detail" id="p-detail">—</div>
+      </div>
+      <div class="pertes-box" style="border-top:3px solid var(--green2)">
+        <div class="p-titre" style="color:var(--green2)" id="p-titre-gagnant">Armée victorieuse</div>
+        <div class="p-taux" style="color:var(--green2)">5 %</div>
+        <div class="p-hommes" id="p-hommes-v">— hommes perdus</div>
+        <div class="p-detail" style="color:var(--txt3);font-size:.68rem;margin-top:.3rem">Minimum incompressible — le choc a un coût.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     VUE RÉFÉRENCES
+══════════════════════════════════════════════════════ -->
+<div class="view" id="view-ref">
+  <div class="panel">
+    <div class="panel-title">📊 Modificateurs Caractéristiques (Valeur → Mod.)</div>
+    <table class="ref-table">
+      <thead><tr><th>Valeur</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th></tr></thead>
+      <tbody><tr><td>Mod.</td><td class="td-bad">+4</td><td class="td-bad">+3</td><td class="td-bad">+2</td><td class="td-bad">+1</td><td>0</td><td>0</td><td class="td-good">−1</td><td class="td-good">−2</td><td class="td-good">−3</td><td class="td-good">−4</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">🏰 Mil.Terrestre — Effectifs &amp; Capital de base</div>
+    <table class="ref-table">
+      <thead><tr><th>Mil.T.</th><th>Effectif médian</th><th>Capital base</th><th>Exemples</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>750 h.</td><td>2</td><td>Petite vassale</td></tr>
+        <tr><td>2</td><td>1 500 h.</td><td>4</td><td>Reed, Corbray</td></tr>
+        <tr><td>3</td><td>2 750 h.</td><td>6</td><td>Karstark, Tarth</td></tr>
+        <tr><td>4</td><td>4 250 h.</td><td>8</td><td>Bolton, Dustin</td></tr>
+        <tr><td>5</td><td>6 000 h.</td><td>10</td><td>Manderly, Blackwood</td></tr>
+        <tr><td>6</td><td>8 500 h.</td><td>12</td><td>Royce, Tarly</td></tr>
+        <tr><td>7</td><td>12 500 h.</td><td>14</td><td>Hightower</td></tr>
+        <tr><td>8</td><td>18 500 h.</td><td>16</td><td>Stark, Baratheon</td></tr>
+        <tr><td>9</td><td>26 000 h.</td><td>18</td><td>Lannister</td></tr>
+        <tr><td>10</td><td>35 000 h.</td><td>20</td><td>Tyrell</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">⚖ Modificateur Numérique (Phase II uniquement)</div>
+    <table class="ref-table">
+      <thead><tr><th>Écart effectifs (%)</th><th>Mod. Numérique</th></tr></thead>
+      <tbody>
+        <tr><td>0 – 10 %</td><td>0</td></tr>
+        <tr><td>11 – 20 %</td><td class="td-good">+1</td></tr>
+        <tr><td>21 – 30 %</td><td class="td-good">+2</td></tr>
+        <tr><td>31 – 40 %</td><td class="td-good">+3</td></tr>
+        <tr><td>41 – 50 %</td><td class="td-good">+4</td></tr>
+        <tr><td>51 – 60 %</td><td class="td-good">+5</td></tr>
+        <tr><td>61 – 70 %</td><td class="td-good">+6</td></tr>
+        <tr><td>71 – 80 %</td><td class="td-good">+7</td></tr>
+        <tr><td>81 – 90 %</td><td class="td-good">+8</td></tr>
+        <tr><td>91 %+</td><td class="td-good">+9</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">⚔ Phase II — Résultats de Confrontation</div>
+    <table class="ref-table">
+      <thead><tr><th>Écart</th><th>PD Vainqueur</th><th>PD Perdant</th><th>Phase III</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td class="td-warn">1</td><td class="td-warn">1</td><td>—</td></tr>
+        <tr><td>1–2</td><td class="td-warn">1</td><td class="td-bad">2</td><td>—</td></tr>
+        <tr><td>3–5</td><td>0</td><td class="td-bad">3</td><td>—</td></tr>
+        <tr><td>6–9</td><td>0</td><td class="td-bad">4</td><td class="td-good">✅ Oui</td></tr>
+        <tr><td>10–14</td><td>0</td><td class="td-bad">5</td><td class="td-good">✅ Oui</td></tr>
+        <tr><td>15+</td><td>0</td><td class="td-bad">6</td><td class="td-good">✅ Oui</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">🏃 Phase III — Poursuite</div>
+    <div class="g2">
+      <table class="ref-table">
+        <thead><tr><th>Écart Ph.II</th><th>Bonus Poursuite</th></tr></thead>
+        <tbody>
+          <tr><td>6–9</td><td class="td-good">+1</td></tr>
+          <tr><td>10–14</td><td class="td-good">+2</td></tr>
+          <tr><td>15+</td><td class="td-good">+3</td></tr>
+        </tbody>
+      </table>
+      <table class="ref-table">
+        <thead><tr><th>Résultat</th><th>PD Déf.</th><th>PD Att.</th></tr></thead>
+        <tbody>
+          <tr><td>Déf. gagne (1–4)</td><td class="td-good">0</td><td>0</td></tr>
+          <tr><td>Déf. gagne (5+)</td><td class="td-good">0</td><td class="td-warn">1</td></tr>
+          <tr><td>Égalité</td><td class="td-warn">1</td><td>0</td></tr>
+          <tr><td>Att. gagne (1–3)</td><td class="td-bad">2</td><td>0</td></tr>
+          <tr><td>Att. gagne (4–7)</td><td class="td-bad">3</td><td>0</td></tr>
+          <tr><td>Att. gagne (8+)</td><td class="td-bad">4</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- wrap -->
+<button id="theme-toggle" onclick="toggleTheme()">🌙 Sombre</button>
+
+<script>
+// ═══════════════════════════════════════
+// TABLES & HELPERS
+// ═══════════════════════════════════════
+var MOD_P = {1:4,2:3,3:2,4:1,5:0,6:0,7:-1,8:-2,9:-3,10:-4};
+function gm(v){ return MOD_P[Math.min(10, Math.max(1, +v))] || 0; }
+function ms(v){ return v > 0 ? '+' + v : (v < 0 ? '' + v : '0'); }
+
+// Effectifs médians par score Mil.Terrestre (table de référence COFAS)
+var MIL_EFF = {1:750,2:1500,3:2750,4:4250,5:6000,6:8500,7:12500,8:18500,9:26000,10:35000};
+function milToEff(mil){
+  mil = Math.max(1, Math.min(20, +mil || 1));
+  if(mil <= 10) return MIL_EFF[mil];
+  var base = MIL_EFF[10];
+  return Math.round(base * Math.pow(1.35, mil - 10));
+}
+function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function clamp(v,mn,mx){ return Math.max(mn, Math.min(mx, v)); }
+
+// État de la bataille
+var BS = {
+  tour: 1,
+  pd: {a:0, b:0},
+  cap: {a:0, b:0},
+  eff: {a:0, b:0},
+  nom: {a:'Armée A', b:'Armée B'},
+  mil: {a:0, b:0},
+  strMod: {a:0, b:0},
+  confMod: {a:0, b:0},
+  numMod: {a:0, b:0},
+  cbtMod: {a:0, b:0},  // pour poursuite
+  phase2Att: null,
+  phase2Ecart: 0,
+  phase3Active: false,
+  bonusPoursuite: 0,
+  active: false,
+  logs: []
+};
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showView(v, btn){
+  document.querySelectorAll('.view').forEach(function(e){ e.classList.remove('active'); });
+  document.getElementById('view-' + v).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(function(e){ e.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  if(v === 'pertes') calcPertes();
+}
+
+// ═══════════════════════════════════════
+// CALCULS SETUP
+// ═══════════════════════════════════════
+function calcCapital(s){
+  var mil = +document.getElementById(s+'-mil').value || 1;
+  var strVal = +document.getElementById(s+'-str-val').value || 5;
+  var strAto = +document.getElementById(s+'-str-ato').value || 0;
+  var ctx = +document.getElementById(s+'-ctx').value || 0;
+  var modStr = -(gm(strVal)); // négatif = bon => réduit le seuil mais ici augmente le capital
+  // Capital = (Mil×2) + Mod.Stratège (ex: val 8 → mod -2, donc capital +2) + Atouts×2 + bonus MJ
+  var modStrBrut = -gm(strVal); // si val=8, mod=-2, capital bénéficie de +2
+  var cap = Math.max(1, (mil * 2) + modStrBrut + (strAto * 2) + ctx);
+  document.getElementById(s+'-capital').textContent = cap;
+  var detail = '('+mil+'×2)';
+  if(modStrBrut !== 0) detail += (modStrBrut > 0 ? ' +' : ' ') + modStrBrut + ' Strat.';
+  if(strAto > 0) detail += ' +' + (strAto*2) + ' Atouts';
+  if(ctx !== 0) detail += (ctx > 0 ? ' +' : ' ') + ctx + ' MJ';
+  document.getElementById(s+'-capital-detail').textContent = detail;
+  BS.cap[s] = cap;
+  BS.nom[s] = document.getElementById(s+'-nom').value || ('Armée '+s.toUpperCase());
+  BS.mil[s] = mil;
+  // Auto-remplir l'effectif d'après le Mil (modifiable manuellement ensuite)
+  var effInp = document.getElementById(s+'-eff');
+  if(effInp){
+    effInp.value = milToEff(mil);
+    effInp.title = 'Effectif médian pour Mil.' + mil + ' (modifiable)';
+  }
+  var hint = document.getElementById(s+'-eff-hint');
+  if(hint){ hint.textContent = '— auto'; hint.style.color = 'var(--txt3)'; }
+  updModDisplay();
+  updPDOverview();
+  calcNum();
+}
+
+function updModDisplay(){
+  ['a','b'].forEach(function(s){
+    var strVal = +document.getElementById(s+'-str-val').value || 5;
+    var strAto = +document.getElementById(s+'-str-ato').value || 0;
+    var strBns = +document.getElementById(s+'-str-bns').value || 0;
+    var modStr = gm(strVal) - (strAto * 2) + strBns; // négatif = bon pour le jet
+    BS.strMod[s] = -modStr; // on stocke le bonus au jet (positif = bon)
+
+    var cmdVal = +document.getElementById(s+'-cmd-val').value || 5;
+    var cmdAto = +document.getElementById(s+'-cmd-ato').value || 0;
+    var cbtVal = +document.getElementById(s+'-cbt-val').value || 5;
+    var cbtAto = +document.getElementById(s+'-cbt-ato').value || 0;
+    var modCmd = gm(cmdVal) - (cmdAto * 2);
+    var modCbt = gm(cbtVal) - (cbtAto * 2);
+    BS.cbtMod[s] = -modCbt;
+
+    var el = document.getElementById(s+'-cmd-mod');
+    if(el){ el.textContent = ms(-gm(cmdVal)); el.className = 'stat-mod ' + modClass(-gm(cmdVal)); }
+    el = document.getElementById(s+'-cbt-mod');
+    if(el){ el.textContent = ms(-gm(cbtVal)); el.className = 'stat-mod ' + modClass(-gm(cbtVal)); }
+
+    var strDisp = document.getElementById(s+'-str-mod-disp');
+    if(strDisp){ strDisp.textContent = ms(-modStr); strDisp.style.color = -modStr >= 0 ? 'var(--green2)' : 'var(--red2)'; }
+
+    // Mod total confrontation (sans bonus stratégie et sans numérique car variables)
+    var confBase = -modCmd + (-modCbt);
+    var confDisp = document.getElementById(s+'-conf-mod');
+    if(confDisp){ confDisp.textContent = ms(confBase) + ' + Bns.Strat + Mod.Num'; confDisp.style.color = confBase >= 0 ? 'var(--green2)' : 'var(--red2)'; }
+    BS.confMod[s] = confBase;
+  });
+  updateCombatFormulas();
+}
+
+function modClass(v){ return v > 0 ? 'mod-pos' : v < 0 ? 'mod-neg' : 'mod-zer'; }
+
+function calcNum(){
+  var eA = +document.getElementById('a-eff').value || 0;
+  var eB = +document.getElementById('b-eff').value || 0;
+  if(!eA || !eB){ document.getElementById('num-sup').textContent='—'; document.getElementById('num-ecart').textContent='—'; document.getElementById('num-mod').textContent='—'; return; }
+  var sup = eA >= eB ? 'A' : 'B';
+  var bigger = Math.max(eA, eB), smaller = Math.min(eA, eB);
+  var pct = Math.round((bigger - smaller) / smaller * 100);
+  var mod = Math.min(9, Math.floor(pct / 10));
+  document.getElementById('num-sup').textContent = sup === 'A' ? (document.getElementById('a-nom').value||'Armée A') : (document.getElementById('b-nom').value||'Armée B');
+  document.getElementById('num-ecart').textContent = pct + '% (~' + (bigger-smaller).toLocaleString('fr') + ' h.)';
+  document.getElementById('num-mod').textContent = '+' + mod;
+  BS.numMod.a = sup === 'a' || sup === 'A' ? mod : 0;
+  BS.numMod.b = sup === 'b' || sup === 'B' ? mod : 0;
+  BS.eff.a = eA; BS.eff.b = eB;
+  updateCombatFormulas();
+}
+
+function updPDOverview(){
+  ['a','b'].forEach(function(s){
+    var pd = BS.pd[s], cap = BS.cap[s] || 1;
+    var pct = Math.min(100, Math.round(pd/cap*100));
+    var el = document.getElementById('pd-'+s);
+    if(!el) return;
+    // setup overview
+    var ov = document.getElementById('pd-overview');
+    if(ov && BS.active) ov.style.display = '';
+  });
+}
+
+// ═══════════════════════════════════════
+// LANCER LA BATAILLE
+// ═══════════════════════════════════════
+function lancerBataille(){
+  calcCapital('a'); calcCapital('b'); calcNum();
+  BS.tour = 1; BS.pd = {a:0, b:0};
+  BS.active = true;
+  BS.logs = [];
+  resetTour();
+  updateCombatPD();
+  updateCombatFormulas();
+  document.getElementById('log-wrap').innerHTML = '<div class="log-empty">Aucun tour validé.</div>';
+  showView('combat', document.querySelectorAll('.nav-tab')[1]);
+}
+
+function resetAll(){
+  BS.tour = 1; BS.pd = {a:0,b:0}; BS.active = false; BS.logs = [];
+  resetTour();
+}
+
+// ═══════════════════════════════════════
+// FORMULES AFFICHÉES DANS LE COMBAT
+// ═══════════════════════════════════════
+function updateCombatFormulas(){
+  ['a','b'].forEach(function(s){
+    var strVal = +document.getElementById(s+'-str-val').value || 5;
+    var strAto = +document.getElementById(s+'-str-ato').value || 0;
+    var strBns = +document.getElementById(s+'-str-bns').value || 0;
+    var modStr = gm(strVal) - (strAto*2) + strBns;
+    // Jet stratégie
+    var sn = document.getElementById('str-n'+s); if(sn) sn.textContent = BS.nom[s]||('Armée '+s.toUpperCase());
+    var sf = document.getElementById('str-f'+s);
+    if(sf) sf.textContent = 'D20 ' + ms(-modStr) + (strAto > 0 ? ' (dont +' + (strAto*2) + ' atouts)' : '') + (strBns ? (strBns > 0 ? ' +' : ' ') + strBns + ' bonus' : '');
+    var sm = document.getElementById('str-m'+s);
+    if(sm){ sm.textContent = ms(-modStr); sm.className = 'jmod ' + modClass(-modStr); }
+
+    // Jet confrontation
+    var cmdVal = +document.getElementById(s+'-cmd-val').value || 5;
+    var cmdAto = +document.getElementById(s+'-cmd-ato').value || 0;
+    var cbtVal = +document.getElementById(s+'-cbt-val').value || 5;
+    var cbtAto = +document.getElementById(s+'-cbt-ato').value || 0;
+    var numMod = BS.numMod[s] || 0;
+    var confTotal = BS.confMod[s] + numMod;
+    var cn = document.getElementById('conf-n'+s); if(cn) cn.textContent = BS.nom[s]||('Armée '+s.toUpperCase());
+    var cf = document.getElementById('conf-f'+s);
+    if(cf) cf.textContent = 'D20 + Bns.Strat.' + ms(-gm(cmdVal)) + ' Cmd' + (cmdAto?'+'+cmdAto*2:'') + ms(-gm(cbtVal)) + ' Cbt' + (cbtAto?'+'+cbtAto*2:'') + (numMod ? ' +' + numMod + ' Num.' : '');
+    var cm = document.getElementById('conf-m'+s);
+    if(cm){ cm.textContent = ms(confTotal) + '+Bns.S'; cm.className = 'jmod ' + modClass(confTotal); }
+  });
+
+  // Labels tour
+  document.getElementById('tour-combat-lbl').textContent = BS.tour;
+}
+
+// ═══════════════════════════════════════
+// JETS & CALCULS COMBAT
+// ═══════════════════════════════════════
+var phase2Winner = null, phase2Ecart = 0, phase3Triggered = false;
+var strDone = false, confDone = false, pursDone = false;
+
+function rollD(inputId, faces, callback){
+  var btn = event ? event.currentTarget : null;
+  if(btn){ btn.classList.add('rolling'); setTimeout(function(){ btn.classList.remove('rolling'); }, 260); }
+  var inp = document.getElementById(inputId);
+  inp.value = Math.floor(Math.random() * faces) + 1;
+  if(callback) callback();
+}
+
+function getStrMod(s){
+  var strVal = +document.getElementById(s+'-str-val').value || 5;
+  var strAto = +document.getElementById(s+'-str-ato').value || 0;
+  var strBns = +document.getElementById(s+'-str-bns').value || 0;
+  return -(gm(strVal) - strAto*2 + strBns);
+}
+
+function getConfMod(s, bonusStrat){
+  var cmdVal = +document.getElementById(s+'-cmd-val').value || 5;
+  var cmdAto = +document.getElementById(s+'-cmd-ato').value || 0;
+  var cbtVal = +document.getElementById(s+'-cbt-val').value || 5;
+  var cbtAto = +document.getElementById(s+'-cbt-ato').value || 0;
+  var numMod = BS.numMod[s] || 0;
+  return (bonusStrat||0) + (-gm(cmdVal)) + cmdAto*2 + (-gm(cbtVal)) + cbtAto*2 + numMod;
+}
+
+function calcStrat(){
+  var da = +document.getElementById('str-da').value;
+  var db = +document.getElementById('str-db').value;
+  var ma = getStrMod('a'), mb = getStrMod('b');
+  var ta = da ? da + ma : null;
+  var tb = db ? db + mb : null;
+  document.getElementById('str-ta').textContent = ta !== null ? ta : '—';
+  document.getElementById('str-tb').textContent = tb !== null ? tb : '—';
+  var res = document.getElementById('str-res');
+  if(ta === null || tb === null){ res.style.display='none'; strDone=false; updStepBanners(); updNextBtn(); return; }
+  res.style.display = 'block';
+  var ecart = Math.abs(ta - tb);
+  var bon = getBonus(ecart);
+  strDone = true;
+  if(ta > tb){
+    BS.phase2BonusA = bon; BS.phase2BonusB = 0;
+    document.getElementById('str-win').innerHTML = '<span style="color:#e07070">'+h(BS.nom.a)+'</span> remporte l\'initiative — <span style="color:var(--gl)">+'+bon+' en Confrontation</span>';
+    document.getElementById('jb-str-a').classList.add('winner');
+    document.getElementById('jb-str-b').classList.remove('winner');
+  } else if(tb > ta){
+    BS.phase2BonusB = bon; BS.phase2BonusA = 0;
+    document.getElementById('str-win').innerHTML = '<span style="color:#87CEEB">'+h(BS.nom.b)+'</span> remporte l\'initiative — <span style="color:var(--gl)">+'+bon+' en Confrontation</span>';
+    document.getElementById('jb-str-b').classList.add('winner');
+    document.getElementById('jb-str-a').classList.remove('winner');
+  } else {
+    BS.phase2BonusA = 0; BS.phase2BonusB = 0;
+    document.getElementById('str-win').innerHTML = '<span style="color:var(--gl)">Égalité tactique</span> — aucun bonus';
+    document.getElementById('jb-str-a').classList.remove('winner');
+    document.getElementById('jb-str-b').classList.remove('winner');
+  }
+  document.getElementById('str-sub').textContent = 'Écart : ' + ecart + ' → Bonus : +' + bon;
+  // Mettre à jour les mods de confrontation avec les bonus de strat
+  var cm_a = document.getElementById('conf-ma');
+  var cm_b = document.getElementById('conf-mb');
+  var ca = getConfMod('a', BS.phase2BonusA);
+  var cb = getConfMod('b', BS.phase2BonusB);
+  if(cm_a){ cm_a.textContent = ms(ca); cm_a.className = 'jmod ' + modClass(ca); }
+  if(cm_b){ cm_b.textContent = ms(cb); cm_b.className = 'jmod ' + modClass(cb); }
+  updStepBanners(); updNextBtn();
+}
+
+function getBonus(ecart){
+  if(ecart === 0) return 0;
+  if(ecart <= 3) return 1;
+  if(ecart <= 6) return 2;
+  if(ecart <= 10) return 3;
+  if(ecart <= 14) return 4;
+  return 5;
+}
+
+function getPDConf(ecart, side){ // side = 'winner' ou 'loser'
+  if(ecart === 0) return 1;
+  if(ecart <= 2) return side === 'winner' ? 1 : 2;
+  if(ecart <= 5) return side === 'winner' ? 0 : 3;
+  if(ecart <= 9) return side === 'winner' ? 0 : 4;
+  if(ecart <= 14) return side === 'winner' ? 0 : 5;
+  return side === 'winner' ? 0 : 6;
+}
+
+function calcConf(){
+  if(!strDone){ updNextBtn(); return; }
+  var da = +document.getElementById('conf-da').value;
+  var db = +document.getElementById('conf-db').value;
+  var ma = getConfMod('a', BS.phase2BonusA||0);
+  var mb = getConfMod('b', BS.phase2BonusB||0);
+  var ta = da ? da + ma : null;
+  var tb = db ? db + mb : null;
+  document.getElementById('conf-ta').textContent = ta !== null ? ta : '—';
+  document.getElementById('conf-tb').textContent = tb !== null ? tb : '—';
+  var res = document.getElementById('conf-res');
+  if(ta === null || tb === null){ res.style.display='none'; confDone=false; phase3Triggered=false; updStepBanners(); updNextBtn(); return; }
+  res.style.display = 'block';
+  var ecart = Math.abs(ta - tb);
+  var winner = ta > tb ? 'a' : tb > ta ? 'b' : null;
+  var loser = winner ? (winner==='a'?'b':'a') : null;
+  phase2Winner = winner; phase2Ecart = ecart;
+
+  var pdW = getPDConf(ecart, 'winner');
+  var pdL = getPDConf(ecart, 'loser');
+  confDone = true;
+
+  var winnerName = winner ? h(BS.nom[winner]) : 'Égalité';
+  var winColor = winner === 'a' ? '#e07070' : winner === 'b' ? '#87CEEB' : 'var(--gl)';
+  document.getElementById('jb-conf-a').classList.toggle('winner', winner==='a');
+  document.getElementById('jb-conf-b').classList.toggle('winner', winner==='b');
+
+  var winTxt = winner ? '<span style="color:'+winColor+'">'+winnerName+'</span> remporte le choc' : '<span style="color:var(--gl)">Égalité</span> — mêlée totale';
+  document.getElementById('conf-win').innerHTML = winTxt;
+  document.getElementById('conf-sub').textContent = 'Écart : ' + ecart;
+
+  var pdLine = '';
+  if(ecart === 0){
+    pdLine = '<span style="color:#e07070">'+h(BS.nom.a)+'</span> : <b>+1 PD</b> &nbsp;·&nbsp; <span style="color:#87CEEB">'+h(BS.nom.b)+'</span> : <b>+1 PD</b>';
+  } else if(winner){
+    var wColor = winner==='a'?'#e07070':'#87CEEB'; var lColor = winner==='a'?'#87CEEB':'#e07070';
+    pdLine = '<span style="color:'+wColor+'">'+h(BS.nom[winner])+'</span> : '+(pdW>0?'<b>+'+pdW+' PD</b>':'0 PD')+' &nbsp;·&nbsp; <span style="color:'+lColor+'">'+h(BS.nom[loser])+'</span> : <b>+'+pdL+' PD</b>';
+  }
+  document.getElementById('conf-pd-line').innerHTML = pdLine;
+
+  // Phase III
+  phase3Triggered = ecart >= 6 && winner !== null;
+  if(phase3Triggered){
+    var bonPurs = ecart >= 15 ? 3 : ecart >= 10 ? 2 : 1;
+    BS.bonusPoursuite = bonPurs;
+    BS.phase2Att = winner;
+    // Setup Phase III
+    var attSide = winner, defSide = loser;
+    var pn_att = document.getElementById('purs-n-att'); if(pn_att) pn_att.textContent = BS.nom[attSide];
+    var pn_def = document.getElementById('purs-n-def'); if(pn_def) pn_def.textContent = BS.nom[defSide];
+    document.getElementById('jb-purs-att').className = 'jb jb-' + attSide;
+    document.getElementById('jb-purs-def').className = 'jb jb-' + defSide;
+    var cbtAtt = BS.cbtMod[attSide] || 0;
+    var cbtDef = BS.cbtMod[defSide] || 0;
+    var pf = document.getElementById('purs-f-att'); if(pf) pf.textContent = 'D20 '+ms(cbtAtt+bonPurs)+' (Cbt '+ms(cbtAtt)+' + Bonus Poursuite +'+bonPurs+')';
+    var pm_att = document.getElementById('purs-m-att'); if(pm_att){ pm_att.textContent = ms(cbtAtt+bonPurs); pm_att.className = 'jmod '+modClass(cbtAtt+bonPurs); }
+    var pm_def = document.getElementById('purs-m-def'); if(pm_def){ pm_def.textContent = ms(cbtDef); pm_def.className = 'jmod '+modClass(cbtDef); }
+    document.getElementById('phase3-content').style.display = '';
+  } else {
+    document.getElementById('phase3-content').style.display = 'none';
+    pursDone = true; // pas de phase III donc considérée comme faite
+  }
+  updStepBanners(); updNextBtn();
+}
+
+function calcPurs(){
+  if(!confDone || !phase3Triggered){ updNextBtn(); return; }
+  var attSide = BS.phase2Att, defSide = attSide==='a'?'b':'a';
+  var da = +document.getElementById('purs-d-att').value;
+  var db = +document.getElementById('purs-d-def').value;
+  var cbtAtt = BS.cbtMod[attSide] || 0;
+  var cbtDef = BS.cbtMod[defSide] || 0;
+  var bonPurs = BS.bonusPoursuite || 0;
+  var ta = da ? da + cbtAtt + bonPurs : null;
+  var tb = db ? db + cbtDef : null;
+  var pt_att = document.getElementById('purs-t-att'); if(pt_att) pt_att.textContent = ta !== null ? ta : '—';
+  var pt_def = document.getElementById('purs-t-def'); if(pt_def) pt_def.textContent = tb !== null ? tb : '—';
+  var res = document.getElementById('purs-res');
+  if(ta === null || tb === null){ res.style.display='none'; pursDone=false; updNextBtn(); return; }
+  res.style.display = 'block';
+  pursDone = true;
+  var ecart = ta - tb; // signé : positif = attaquant gagne
+  var attColor = attSide==='a'?'#e07070':'#87CEEB'; var defColor = attSide==='a'?'#87CEEB':'#e07070';
+  var win='', sub='';
+  if(ecart < 0){ // défenseur gagne
+    var absE = Math.abs(ecart);
+    if(absE >= 5){
+      win = '<span style="color:'+defColor+'">'+h(BS.nom[defSide])+'</span> contre-charge ! <span style="color:var(--red2)">+1 PD à l\'Attaquant</span>';
+      sub = 'Retraite organisée — l\'attaquant paie sa témérité';
+      BS._pursResult = {pdAtt:1, pdDef:0};
+    } else {
+      win = '<span style="color:'+defColor+'">'+h(BS.nom[defSide])+'</span> repousse la poursuite';
+      sub = 'Retraite ordonnée — 0 PD supplémentaire';
+      BS._pursResult = {pdAtt:0, pdDef:0};
+    }
+  } else if(ecart === 0){
+    win = 'Égalité — harcèlement léger';
+    sub = '+1 PD pour le défenseur';
+    BS._pursResult = {pdAtt:0, pdDef:1};
+  } else if(ecart <= 3){
+    win = '<span style="color:'+attColor+'">'+h(BS.nom[attSide])+'</span> — coupes sombres';
+    sub = '+2 PD pour le défenseur';
+    BS._pursResult = {pdAtt:0, pdDef:2};
+  } else if(ecart <= 7){
+    win = '<span style="color:'+attColor+'">'+h(BS.nom[attSide])+'</span> — massacre en rase campagne';
+    sub = '+3 PD pour le défenseur';
+    BS._pursResult = {pdAtt:0, pdDef:3};
+  } else {
+    win = '<span style="color:'+attColor+'">'+h(BS.nom[attSide])+'</span> — anéantissement total';
+    sub = '+4 PD pour le défenseur';
+    BS._pursResult = {pdAtt:0, pdDef:4};
+  }
+  document.getElementById('purs-win').innerHTML = win;
+  document.getElementById('purs-sub').textContent = sub;
+  updNextBtn();
+}
+
+// ═══════════════════════════════════════
+// VALIDATION DE TOUR
+// ═══════════════════════════════════════
+function validerTour(){
+  // Collecter les PD de ce tour
+  var pdA=0, pdB=0;
+  var ecart = phase2Ecart, winner = phase2Winner;
+  // Phase II
+  if(ecart === 0){ pdA += 1; pdB += 1; }
+  else if(winner){
+    var loser = winner==='a'?'b':'a';
+    var pdW = getPDConf(ecart,'winner'), pdL = getPDConf(ecart,'loser');
+    if(winner==='a'){ pdA+=pdW; pdB+=pdL; } else { pdB+=pdW; pdA+=pdL; }
+  }
+  // Phase III
+  if(phase3Triggered && BS._pursResult){
+    var att = BS.phase2Att, def = att==='a'?'b':'a';
+    if(att==='a'){ pdA += BS._pursResult.pdAtt; pdB += BS._pursResult.pdDef; }
+    else { pdB += BS._pursResult.pdAtt; pdA += BS._pursResult.pdDef; }
+  }
+  BS.pd.a += pdA; BS.pd.b += pdB;
+
+  // Log du tour
+  var logHtml = buildTourLog(pdA, pdB);
+  addLog(logHtml);
+
+  // Vérifier déroute
+  var derouteA = BS.pd.a >= BS.cap.a;
+  var derouteB = BS.pd.b >= BS.cap.b;
+  if(derouteA || derouteB || BS.tour >= 5){
+    var endHtml = '';
+    if(derouteA) endHtml += "<div class='log-deroute log-deroute-a'>⚡ "+h(BS.nom.a)+" est en DÉROUTE ! (Tour "+BS.tour+")</div>";
+    if(derouteB) endHtml += "<div class='log-deroute log-deroute-b'>⚡ "+h(BS.nom.b)+" est en DÉROUTE ! (Tour "+BS.tour+")</div>";
+    if(!derouteA && !derouteB && BS.tour >= 5){
+      var pdA_tot=BS.pd.a, pdB_tot=BS.pd.b;
+      if(pdA_tot < pdB_tot) endHtml += "<div class='log-deroute' style='color:var(--gl);background:rgba(212,175,55,.08);border-color:rgba(212,175,55,.28)'>⏱ 5 tours — Victoire tactique : "+h(BS.nom.a)+"</div>";
+      else if(pdB_tot < pdA_tot) endHtml += "<div class='log-deroute' style='color:var(--gl);background:rgba(212,175,55,.08);border-color:rgba(212,175,55,.28)'>⏱ 5 tours — Victoire tactique : "+h(BS.nom.b)+"</div>";
+      else endHtml += "<div class='log-deroute' style='color:var(--gl);background:rgba(212,175,55,.08);border-color:rgba(212,175,55,.28)'>⏱ 5 tours — TRÊVE (PD égaux)</div>";
+    }
+    if(endHtml) addLog(endHtml);
+    document.getElementById('next-tour-btn').disabled = true;
+    document.getElementById('battle-status').textContent = 'Terminée';
+    document.getElementById('battle-status').style.color = 'var(--red2)';
+    // Pré-remplir l'onglet pertes
+    var perdant = derouteA ? 'a' : (derouteB ? 'b' : (BS.pd.a > BS.pd.b ? 'a' : 'b'));
+    document.getElementById('p-perdant').value = perdant;
+    document.getElementById('p-pd').value = BS.pd[perdant];
+    document.getElementById('p-cap').value = BS.cap[perdant];
+    document.getElementById('p-eff').value = BS.eff[perdant] || 0;
+    document.getElementById('p-tour').value = BS.tour;
+    document.getElementById('p-cmd-p').value = document.getElementById(perdant+'-cmd-val').value;
+    document.getElementById('p-cmd-v').value = document.getElementById((perdant==='a'?'b':'a')+'-cmd-val').value;
+  } else {
+    BS.tour++;
+    document.getElementById('tour-combat-lbl').textContent = BS.tour;
+    resetTour();
+  }
+  updateCombatPD();
+}
+
+function buildTourLog(pdA, pdB){
+  var da = +document.getElementById('str-da').value||'?';
+  var db = +document.getElementById('str-db').value||'?';
+  var msa = getStrMod('a'), msb = getStrMod('b');
+  var ta_s = da !== '?' ? da + msa : '?';
+  var tb_s = db !== '?' ? db + msb : '?';
+  var da2 = +document.getElementById('conf-da').value||'?';
+  var db2 = +document.getElementById('conf-db').value||'?';
+  var ta2 = da2 !== '?' ? (da2 + getConfMod('a', BS.phase2BonusA||0)) : '?';
+  var tb2 = db2 !== '?' ? (db2 + getConfMod('b', BS.phase2BonusB||0)) : '?';
+
+  var html = "<div class='log-round-hdr'>Tour "+BS.tour+"</div>";
+  html += "<div class='log-entry'>";
+  html += "<span class='log-a'>"+h(BS.nom.a)+"</span> vs <span class='log-b'>"+h(BS.nom.b)+"</span><br>";
+  html += "Stratégie : <span class='log-a'>"+ta_s+"</span> vs <span class='log-b'>"+tb_s+"</span>";
+  html += " · Confrontation : <span class='log-a'>"+ta2+"</span> vs <span class='log-b'>"+tb2+"</span><br>";
+  html += "PD ce tour : <span class='log-a'>"+h(BS.nom.a)+"</span> <span class='log-bold'>+"+pdA+"</span>";
+  html += " &nbsp;·&nbsp; <span class='log-b'>"+h(BS.nom.b)+"</span> <span class='log-bold'>+"+pdB+"</span><br>";
+  html += "Total PD : <span class='log-a'>"+(BS.pd.a)+"/"+(BS.cap.a)+"</span> &nbsp;·&nbsp; <span class='log-b'>"+(BS.pd.b)+"/"+(BS.cap.b)+"</span>";
+  html += "</div>";
+  return html;
+}
+
+function addLog(html){
+  var wrap = document.getElementById('log-wrap');
+  var empty = wrap.querySelector('.log-empty');
+  if(empty) wrap.innerHTML = '';
+  var div = document.createElement('div');
+  div.innerHTML = html;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function updateCombatPD(){
+  ['a','b'].forEach(function(s){
+    var pd = BS.pd[s], cap = BS.cap[s] || 1;
+    var pct = Math.min(100, Math.round(pd/cap*100));
+    var color = pct >= 100 ? '#555' : pct >= 70 ? 'var(--red2)' : pct >= 40 ? '#e0a030' : 'var(--green2)';
+    var el_v = document.getElementById('c-pd-v'+s);
+    var el_b = document.getElementById('c-pd-b'+s);
+    var el_st = document.getElementById('c-pd-st-'+s);
+    var el_n = document.getElementById('c-pd-n'+s);
+    if(el_n) el_n.textContent = BS.nom[s];
+    if(el_v){ el_v.textContent = pd + ' / ' + cap + ' PD'; el_v.style.color = s==='a'?'#e07070':'#87CEEB'; }
+    if(el_b){ el_b.style.width = pct+'%'; }
+    if(el_st){
+      if(pct >= 100){ el_st.textContent='En déroute'; el_st.className='sbadge st-dead'; }
+      else if(pct >= 70){ el_st.textContent='Critique'; el_st.className='sbadge st-crit'; }
+      else if(pct >= 40){ el_st.textContent='Ébranlée'; el_st.className='sbadge st-warn'; }
+      else { el_st.textContent='En ordre'; el_st.className='sbadge st-ok'; }
+    }
+  });
+}
+
+function resetTour(){
+  strDone=false; confDone=false; pursDone=false;
+  phase2Winner=null; phase2Ecart=0; phase3Triggered=false;
+  BS.phase2BonusA=0; BS.phase2BonusB=0; BS._pursResult=null;
+  ['str-da','str-db','conf-da','conf-db','purs-d-att','purs-d-def'].forEach(function(id){
+    var e=document.getElementById(id);if(e)e.value='';
+  });
+  ['str-ta','str-tb','conf-ta','conf-tb'].forEach(function(id){
+    var e=document.getElementById(id);if(e)e.textContent='—';
+  });
+  var pt=document.getElementById('purs-t-att');if(pt)pt.textContent='—';
+  pt=document.getElementById('purs-t-def');if(pt)pt.textContent='—';
+  ['str-res','conf-res','purs-res'].forEach(function(id){
+    var e=document.getElementById(id);if(e)e.style.display='none';
+  });
+  document.getElementById('phase3-content').style.display='none';
+  document.getElementById('jb-str-a').classList.remove('winner');
+  document.getElementById('jb-str-b').classList.remove('winner');
+  document.getElementById('jb-conf-a').classList.remove('winner');
+  document.getElementById('jb-conf-b').classList.remove('winner');
+  updStepBanners(); updNextBtn();
+  updateCombatFormulas();
+}
+
+function updStepBanners(){
+  var b1=document.getElementById('step1-banner');
+  var b2=document.getElementById('step2-banner');
+  var b3=document.getElementById('step3-banner');
+  b1.className = strDone ? 'step-banner done' : 'step-banner';
+  b2.className = !strDone ? 'step-banner waiting' : confDone ? 'step-banner done' : 'step-banner';
+  if(!confDone) b3.className='step-banner waiting';
+  else if(!phase3Triggered) b3.className='step-banner done';
+  else b3.className = pursDone ? 'step-banner cond done' : 'step-banner cond';
+  b3.querySelector('.step-num').textContent='3';
+}
+
+function updNextBtn(){
+  var ok = strDone && confDone && (pursDone || !phase3Triggered);
+  var btn = document.getElementById('next-tour-btn');
+  if(btn) btn.disabled = !ok || !BS.active;
+}
+
+// ═══════════════════════════════════════
+// PERTES
+// ═══════════════════════════════════════
+var CMD_MOD = {1:10,2:10,3:5,4:5,5:0,6:0,7:-5,8:-5,9:-10,10:-10};
+var TOUR_MOD = {1:25,2:15,3:5,4:0,5:-5};
+
+function calcPertes(){
+  var perdant = document.getElementById('p-perdant').value;
+  var tour = +document.getElementById('p-tour').value || 2;
+  var pd = +document.getElementById('p-pd').value || 0;
+  var cap = +document.getElementById('p-cap').value || 1;
+  var eff = +document.getElementById('p-eff').value || 0;
+  var cmdP = +document.getElementById('p-cmd-p').value || 5;
+  var cmdV = +document.getElementById('p-cmd-v').value || 5;
+  var nomP = BS.nom[perdant] || ('Armée '+perdant.toUpperCase());
+  var nomV = BS.nom[perdant==='a'?'b':'a'] || 'Armée victorieuse';
+  var basePct = Math.round((pd/cap)*60);
+  var tourMod = TOUR_MOD[Math.min(5,Math.max(1,tour))] || 0;
+  var cmdPmod = CMD_MOD[Math.min(10,Math.max(1,cmdP))] || 0;
+  var cmdVmod = Math.round((CMD_MOD[Math.min(10,Math.max(1,cmdV))] || 0) / 2);
+  var taux = clamp(basePct + tourMod + cmdPmod + cmdVmod, 5, 85);
+  var pertes = Math.round(eff * taux / 100);
+  var pertesV = Math.round((BS.eff[perdant==='a'?'b':'a'] || eff) * 0.05);
+  var detail = 'Base ('+pd+'/'+cap+'×60%) = '+basePct+'%';
+  if(tourMod) detail += (tourMod>0?' +':' ')+tourMod+'% (tour '+tour+')';
+  if(cmdPmod) detail += (cmdPmod>0?' +':' ')+cmdPmod+'% (Cmd perdant)';
+  if(cmdVmod) detail += (cmdVmod>0?' +':' ')+cmdVmod+'% (Cmd adverse)';
+  detail += ' = '+taux+'%';
+  document.getElementById('pertes-result').style.display='grid';
+  document.getElementById('p-titre-perdant').textContent = nomP;
+  document.getElementById('p-titre-gagnant').textContent = nomV;
+  document.getElementById('p-taux').textContent = taux + ' %';
+  document.getElementById('p-hommes').textContent = pertes.toLocaleString('fr') + ' hommes perdus / capturés';
+  document.getElementById('p-detail').textContent = detail;
+  if(BS.eff[perdant==='a'?'b':'a'])
+    document.getElementById('p-hommes-v').textContent = pertesV.toLocaleString('fr') + ' hommes perdus (5%)';
+  else
+    document.getElementById('p-hommes-v').textContent = 'Effectif non renseigné';
+}
+
+// ═══════════════════════════════════════
+// THÈME
+// ═══════════════════════════════════════
+function toggleTheme(){
+  var isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('theme-toggle').textContent = isLight ? '☀ Clair' : '🌙 Sombre';
+  localStorage.setItem('cofas-bataille-theme', isLight ? 'light' : 'dark');
+}
+(function(){
+  var t = localStorage.getItem('cofas-bataille-theme');
+  if(t==='light'){ document.documentElement.classList.add('light'); document.addEventListener('DOMContentLoaded',function(){ var btn=document.getElementById('theme-toggle');if(btn)btn.textContent='☀ Clair'; }); }
+})();
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+calcCapital('a'); calcCapital('b'); calcNum(); updModDisplay(); updStepBanners(); updNextBtn(); calcPertes();
+</script>
+</body>
+</html>
